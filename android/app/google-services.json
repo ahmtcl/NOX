@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "384722763523",
+    "project_id": "noxnew-47c51",
+    "storage_bucket": "noxnew-47c51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:384722763523:android:f1aa84433eced48db0b336",
+        "android_client_info": {
+          "package_name": "com.nox.nox"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXqCztYcpXcSqqlZ-Lb3a8FFK1f9eEvj0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

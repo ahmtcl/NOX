@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../../features/safety/domain/safety_models.dart';
 
 class AppLocalizations {
   AppLocalizations(this.locale);
@@ -333,6 +334,56 @@ class AppLocalizations {
   String discoverySemantic(
           String? name, int? age, String? city, List<String> tags) =>
       '${name ?? discoveryAnonymous}${age == null ? '' : ', $age'}${city == null ? '' : ', $city'}. ${tags.join(', ')}';
+
+  String get safetyOptions =>
+      isTurkish ? 'Profil seçenekleri' : 'Profile options';
+  String get safetyCancel => isTurkish ? 'Vazgeç' : 'Cancel';
+  String get safetyBlockTitle =>
+      isTurkish ? 'Bu kişiyi engellemek istiyor musun?' : 'Block this person?';
+  String get safetyBlockBody => isTurkish
+      ? 'Engellediğinde bu kişi Discovery’de tekrar karşına çıkmaz.'
+      : "When you block someone, they won't appear in Discovery again.";
+  String get safetyBlocked =>
+      isTurkish ? 'Bu kişi engellendi.' : 'This person has been blocked.';
+  String get safetyReportTitle => isTurkish
+      ? 'Bu kullanıcıyı neden bildiriyorsun?'
+      : 'Why are you reporting this person?';
+  String get safetyConfidential => isTurkish
+      ? 'Bildirimin gizli tutulur.'
+      : 'Your report is kept confidential.';
+  String get safetyDetails => isTurkish
+      ? 'Biraz daha anlatmak ister misin?'
+      : 'Would you like to share more?';
+  String get safetyDetailsHint => isTurkish
+      ? 'İstersen yaşadığın durumu kısaca anlatabilirsin.'
+      : 'You can briefly describe what happened.';
+  String get safetyAlsoBlock =>
+      isTurkish ? 'Bu kişiyi aynı zamanda engelle' : 'Also block this person';
+  String get safetySubmit => isTurkish ? 'Bildirim gönder' : 'Submit report';
+  String get safetyReceived =>
+      isTurkish ? 'Bildirim alındı.' : 'Report received.';
+  String get safetyFailed => isTurkish
+      ? 'İşlem tamamlanamadı. Tekrar dene.'
+      : 'The action could not be completed. Please try again.';
+  String reportReason(ReportReason reason) => switch (reason) {
+        ReportReason.harassment => isTurkish
+            ? 'Taciz veya rahatsız edici davranış'
+            : 'Harassment or unwanted behavior',
+        ReportReason.inappropriateMessages =>
+          isTurkish ? 'Uygunsuz mesajlar' : 'Inappropriate messages',
+        ReportReason.fakeProfile => isTurkish ? 'Sahte profil' : 'Fake profile',
+        ReportReason.sexualContent =>
+          isTurkish ? 'Cinsel içerik' : 'Sexual content',
+        ReportReason.threat => isTurkish
+            ? 'Tehdit veya güvenlik endişesi'
+            : 'Threat or safety concern',
+        ReportReason.scam =>
+          isTurkish ? 'Dolandırıcılık / para isteme' : 'Scam or money request',
+        ReportReason.inappropriatePhoto =>
+          isTurkish ? 'Uygunsuz fotoğraf' : 'Inappropriate photo',
+        ReportReason.spam => isTurkish ? 'Spam' : 'Spam',
+        ReportReason.other => isTurkish ? 'Diğer' : 'Other'
+      };
 
   String onboardingTitle(int index) => switch (index) {
         0 => isTurkish

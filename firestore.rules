@@ -44,8 +44,28 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /private_profiles/{uid} { allow read, write: if self(uid); }
-    match /blocks/{uid}/items/{blockedUid} { allow read, write: if self(uid); }
-    match /reports/{reportId} { allow create: if signedIn(); allow read, update, delete: if false; }
+    match /blocks/{blockId} {
+      allow read: if signedIn() && resource.data.blockerUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['blockerUid', 'blockedUid', 'createdAt'])
+        && request.resource.data.blockerUid == request.auth.uid
+        && request.resource.data.blockedUid is string
+        && request.resource.data.blockedUid != request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.blockerUid == request.auth.uid;
+    }
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reporterUid', 'reportedUid', 'reason', 'details', 'createdAt', 'status'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.reportedUid is string
+        && request.resource.data.reportedUid != request.auth.uid
+        && request.resource.data.reason in ['harassment', 'inappropriateMessages', 'fakeProfile', 'sexualContent', 'threat', 'scam', 'inappropriatePhoto', 'spam', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

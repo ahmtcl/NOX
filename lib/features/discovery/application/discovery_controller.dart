@@ -3,6 +3,7 @@ import '../../auth/application/auth_controller.dart';
 import '../data/firestore_discovery_repository.dart';
 import '../domain/discovery_repository.dart';
 import '../domain/public_profile.dart';
+import '../../safety/application/safety_controller.dart';
 
 final discoveryRepositoryProvider =
     Provider<DiscoveryRepository>((ref) => FirestoreDiscoveryRepository());
@@ -18,11 +19,15 @@ class DiscoveryController extends AsyncNotifier<List<PublicProfile>> {
   Future<List<PublicProfile>> _load() async {
     final uid = ref.read(authControllerProvider).user?.id;
     if (uid == null) return [];
+    final blocked =
+        await ref.read(safetyRepositoryProvider).getBlockedUserIds(uid);
     final page = await ref
         .read(discoveryRepositoryProvider)
         .getDiscoveryProfiles(currentUid: uid);
     _cursor = page.cursor;
-    return page.profiles;
+    return page.profiles
+        .where((profile) => !blocked.contains(profile.uid))
+        .toList();
   }
 
   Future<void> retry() async {

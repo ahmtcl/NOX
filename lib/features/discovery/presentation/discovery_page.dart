@@ -55,7 +55,8 @@ class DiscoveryPage extends ConsumerWidget {
                                       onLike: () => _sendInteraction(context,
                                           ref, item, InteractionType.like),
                                       onSpecialInterest: () =>
-                                          _handleSpecialInterest(context, ref),
+                                          _handleSpecialInterest(
+                                              context, ref, item),
                                     )),
                               TextButton(
                                   onPressed: () => ref
@@ -79,9 +80,23 @@ class DiscoveryPage extends ConsumerWidget {
     }
   }
 
-  void _handleSpecialInterest(BuildContext context, WidgetRef ref) {
+  Future<void> _handleSpecialInterest(
+      BuildContext context, WidgetRef ref, PublicProfile profile) async {
     if (ref.read(premiumStateProvider)) {
-      // TODO: Add Special Interest reason selection and submission.
+      final sent = await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: NoxColors.elevatedSurface,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+          builder: (_) => _SpecialInterestReasonSheet(
+              onSubmit: (reason) =>
+                  _submitSpecialInterest(ref, profile, reason)));
+      if (sent == true && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                AppLocalizations.of(context).discoverySpecialInterestSent)));
+      }
       return;
     }
     final l = AppLocalizations.of(context);
@@ -99,16 +114,40 @@ class DiscoveryPage extends ConsumerWidget {
               Text(l.discoverySpecialInterestBody,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: NoxColors.textSecondary)),
+              const SizedBox(height: 8),
+              Text(l.discoverySpecialInterestPremiumNote,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: NoxColors.lavender)),
               const SizedBox(height: 24),
               SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(l.discoveryPremiumPlaceholder)));
+                      },
                       child: Text(l.discoveryExplorePremium))),
               TextButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
                   child: Text(l.discoveryNotNow))
             ])));
+  }
+
+  Future<bool> _submitSpecialInterest(WidgetRef ref, PublicProfile profile,
+      SpecialInterestReason reason) async {
+    final fromUid = ref.read(authControllerProvider).user?.id;
+    if (fromUid == null) return false;
+    final sent = await ref.read(interestControllerProvider.notifier).send(
+        Interaction(
+            fromUid: fromUid,
+            toUid: profile.uid,
+            type: InteractionType.specialInterest,
+            reason: reason));
+    if (sent) {
+      ref.read(discoveryControllerProvider.notifier).removeProfile(profile.uid);
+    }
+    return sent;
   }
 }
 
@@ -221,6 +260,145 @@ class _ActionButton extends StatelessWidget {
                           side: BorderSide(color: color.withValues(alpha: .5)),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16))))))));
+}
+
+class _SpecialInterestReasonSheet extends StatefulWidget {
+  const _SpecialInterestReasonSheet({required this.onSubmit});
+  final Future<bool> Function(SpecialInterestReason reason) onSubmit;
+
+  @override
+  State<_SpecialInterestReasonSheet> createState() =>
+      _SpecialInterestReasonSheetState();
+}
+
+class _SpecialInterestReasonSheetState
+    extends State<_SpecialInterestReasonSheet> {
+  static const _reasons = [
+    (SpecialInterestReason.personality, '🧠'),
+    (SpecialInterestReason.humor, '😂'),
+    (SpecialInterestReason.music, '🎵'),
+    (SpecialInterestReason.lifestyle, '🌎'),
+    (SpecialInterestReason.profileEnergy, '📸'),
+    (SpecialInterestReason.overall, '❤️'),
+  ];
+  SpecialInterestReason? _selected;
+  var _submitting = false;
+
+  Future<void> _submit() async {
+    final reason = _selected;
+    if (reason == null || _submitting) return;
+    setState(() => _submitting = true);
+    final sent = await widget.onSubmit(reason);
+    if (!mounted) return;
+    if (sent) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() => _submitting = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content:
+            Text(AppLocalizations.of(context).discoverySpecialInterestFailed)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return SafeArea(
+        child: Padding(
+            padding: EdgeInsets.fromLTRB(
+                24, 24, 24, 16 + MediaQuery.viewInsetsOf(context).bottom),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(l.discoverySpecialInterestReasonTitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(l.discoverySpecialInterestReasonBody,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: NoxColors.textSecondary)),
+              const SizedBox(height: 20),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                for (final option in _reasons)
+                  _ReasonOption(
+                      reason: option.$1,
+                      emoji: option.$2,
+                      selected: _selected == option.$1,
+                      onTap: _submitting
+                          ? null
+                          : () => setState(() => _selected = option.$1))
+              ]),
+              const SizedBox(height: 24),
+              SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                      onPressed:
+                          _selected == null || _submitting ? null : _submit,
+                      child: _submitting
+                          ? Row(mainAxisSize: MainAxisSize.min, children: [
+                              const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2)),
+                              const SizedBox(width: 12),
+                              Text(l.discoverySpecialInterestLoading)
+                            ])
+                          : Text(l.discoverySpecialInterestSend)))
+            ])));
+  }
+}
+
+class _ReasonOption extends StatelessWidget {
+  const _ReasonOption(
+      {required this.reason,
+      required this.emoji,
+      required this.selected,
+      required this.onTap});
+  final SpecialInterestReason reason;
+  final String emoji;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final color = selected ? NoxColors.lavender : NoxColors.textSecondary;
+    return Semantics(
+        button: true,
+        selected: selected,
+        excludeSemantics: true,
+        label: l.discoveryReasonSelectionSemantics(reason, selected),
+        child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: AnimatedContainer(
+                duration: Duration.zero,
+                constraints: const BoxConstraints(minHeight: 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                    color: selected
+                        ? NoxColors.violet.withValues(alpha: .24)
+                        : NoxColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: selected
+                            ? NoxColors.lavender
+                            : color.withValues(alpha: .3)),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                                color: NoxColors.violet.withValues(alpha: .22),
+                                blurRadius: 14)
+                          ]
+                        : null),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(emoji),
+                  const SizedBox(width: 8),
+                  Text(l.discoverySpecialInterestReason(reason),
+                      style: TextStyle(color: color))
+                ]))));
+  }
 }
 
 class _Skeleton extends StatelessWidget {

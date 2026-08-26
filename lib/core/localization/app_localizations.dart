@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import '../../features/interest/domain/interaction.dart';
 import '../../features/safety/domain/safety_models.dart';
 
 class AppLocalizations {
@@ -322,9 +323,49 @@ class AppLocalizations {
   String get discoverySpecialInterestBody => isTurkish
       ? 'Bu kişiye diğerlerinden farklı olduğunu hissettir.'
       : 'Let this person know they stand out from the rest.';
+  String get discoverySpecialInterestPremiumNote => isTurkish
+      ? 'Özel İlgi, NOX Premium özelliğidir.'
+      : 'Special Interest is a NOX Premium feature.';
   String get discoveryExplorePremium =>
       isTurkish ? 'Premium\'u Keşfet' : 'Explore Premium';
+  String get discoveryPremiumPlaceholder => isTurkish
+      ? 'Premium keşfi yakında burada olacak.'
+      : 'Premium discovery will be available here soon.';
   String get discoveryNotNow => isTurkish ? 'Şimdi Değil' : 'Not now';
+  String get discoverySpecialInterestReasonTitle => isTurkish
+      ? 'Neden özellikle ilgini çekti?'
+      : 'Why did they especially catch your interest?';
+  String get discoverySpecialInterestReasonBody => isTurkish
+      ? 'Bir neden seç. Bu, gönderdiğin Özel İlgi\'yi daha anlamlı hale getirir.'
+      : 'Choose a reason. It makes the Special Interest you send more meaningful.';
+  String get discoveryChooseReason =>
+      isTurkish ? 'Bir neden seç.' : 'Choose a reason.';
+  String discoverySpecialInterestReason(SpecialInterestReason reason) =>
+      switch (reason) {
+        SpecialInterestReason.personality =>
+          isTurkish ? 'Kişiliği' : 'Personality',
+        SpecialInterestReason.humor => isTurkish ? 'Mizahı' : 'Humor',
+        SpecialInterestReason.music =>
+          isTurkish ? 'Müzik zevki' : 'Music taste',
+        SpecialInterestReason.lifestyle =>
+          isTurkish ? 'Yaşam tarzı' : 'Lifestyle',
+        SpecialInterestReason.profileEnergy =>
+          isTurkish ? 'Profil enerjisi' : 'Profile energy',
+        SpecialInterestReason.overall =>
+          isTurkish ? 'Genel olarak ilgimi çekti' : 'I\'m interested overall',
+      };
+  String get discoverySpecialInterestSend =>
+      isTurkish ? 'Özel İlgi Gönder' : 'Send Special Interest';
+  String get discoverySpecialInterestSent =>
+      isTurkish ? '✦ Özel İlgi gönderildi.' : '✦ Special Interest sent.';
+  String get discoverySpecialInterestFailed => isTurkish
+      ? 'Özel İlgi gönderilemedi. Tekrar deneyin.'
+      : 'Special Interest could not be sent. Please try again.';
+  String get discoverySpecialInterestLoading =>
+      isTurkish ? 'Yükleniyor.' : 'Loading.';
+  String discoveryReasonSelectionSemantics(
+          SpecialInterestReason reason, bool selected) =>
+      '${discoverySpecialInterestReason(reason)}, ${selected ? (isTurkish ? 'seçildi' : 'selected') : (isTurkish ? 'seçilmedi' : 'not selected')}';
   String get discoveryProfile => isTurkish ? 'Profil' : 'Profile';
   String get discoveryAnonymous => isTurkish ? 'NOX üyesi' : 'NOX member';
   String get discoveryPersonality => isTurkish ? 'Kişilik' : 'Personality';

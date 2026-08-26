@@ -8,6 +8,8 @@ import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/legal_placeholder_page.dart';
 import '../../features/profile/presentation/profile_setup_page.dart';
+import '../../features/profile/presentation/profile_home_placeholder_page.dart';
+import '../../features/profile/application/profile_completion_provider.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/verify_email_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
@@ -16,12 +18,15 @@ import '../../features/splash/presentation/splash_page.dart';
 final _routerRefreshProvider = Provider<_RouterRefresh>((ref) {
   final refresh = _RouterRefresh();
   ref.listen<AuthState>(authControllerProvider, (_, __) => refresh.notify());
+  ref.listen<AsyncValue<bool>>(
+      profileCompletionProvider, (_, __) => refresh.notify());
   ref.onDispose(refresh.dispose);
   return refresh;
 });
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(_routerRefreshProvider);
+  ref.watch(profileCompletionProvider);
   return GoRouter(
     initialLocation: '/',
     refreshListenable: refresh,
@@ -29,7 +34,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authControllerProvider);
       final location = state.matchedLocation;
       final isAuthRoute = location.startsWith('/auth');
-      final isProtected = location == '/profile/setup';
+      final isProtected = location == '/profile/setup' || location == '/home';
+      final profileCompleted =
+          ref.read(profileCompletionProvider).valueOrNull == true;
       if (auth.status == AuthStatus.loading ||
           location == '/' ||
           location == '/onboarding') return null;
@@ -38,8 +45,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return isProtected ? '/auth/login' : null;
       if (auth.status == AuthStatus.verificationRequired)
         return location == '/auth/verify-email' ? null : '/auth/verify-email';
-      if (auth.status == AuthStatus.authenticated && isAuthRoute)
-        return '/profile/setup';
+      if (auth.status == AuthStatus.authenticated &&
+          (isAuthRoute || location == '/profile/setup')) {
+        return profileCompleted ? '/home' : '/profile/setup';
+      }
       return null;
     },
     routes: [
@@ -62,6 +71,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/profile/setup',
           builder: (context, state) => const ProfileSetupPage()),
+      GoRoute(
+          path: '/home',
+          builder: (context, state) => const ProfileHomePlaceholderPage()),
       GoRoute(
           path: '/legal/privacy',
           builder: (context, state) =>

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../features/auth/application/auth_controller.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/nox_theme.dart';
 import '../application/profile_setup_controller.dart';
@@ -91,6 +93,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     _Actions(
                       step: _step,
                       draft: draft,
+                      saveState: ref.watch(profileSetupSaveControllerProvider),
                       onBack: _step == 0 ? null : () => _moveTo(_step - 1),
                       onSkip:
                           _step < totalSteps ? () => _moveTo(_step + 1) : null,
@@ -128,7 +131,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
     return _SummaryStep(draft: draft);
   }
 
-  void _next(ProfileSetupDraft draft) {
+  Future<void> _next(ProfileSetupDraft draft) async {
     if (_step < profileQuestions.length) {
       final definition = profileQuestions[_step];
       if (draft.choicesFor(definition.question).length < definition.minimum)
@@ -140,8 +143,19 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
       _moveTo(_step + 1);
       return;
     }
+    final didSave = await ref
+        .read(profileSetupSaveControllerProvider.notifier)
+        .complete(ref.read(authControllerProvider).user);
+    if (!mounted) return;
+    if (didSave) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).profileCompleted)),
+      );
+      context.go('/home');
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).profileSaved)),
+      SnackBar(content: Text(AppLocalizations.of(context).profileSaveFailed)),
     );
   }
 }
@@ -413,11 +427,13 @@ class _Actions extends StatelessWidget {
   const _Actions(
       {required this.step,
       required this.draft,
+      required this.saveState,
       required this.onBack,
       required this.onSkip,
       required this.onNext});
   final int step;
   final ProfileSetupDraft draft;
+  final ProfileSetupSaveState saveState;
   final VoidCallback? onBack;
   final VoidCallback? onSkip;
   final VoidCallback onNext;
@@ -437,8 +453,17 @@ class _Actions extends StatelessWidget {
         TextButton(onPressed: onSkip, child: Text(l10n.profileSkip)),
       const SizedBox(width: 8),
       FilledButton(
-          onPressed: canContinue ? onNext : null,
-          child: Text(isSummary ? l10n.profileFinish : l10n.profileContinue)),
+          onPressed: canContinue && !saveState.isSaving ? onNext : null,
+          child: saveState.isSaving && isSummary
+              ? Row(mainAxisSize: MainAxisSize.min, children: [
+                  const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: 8),
+                  Text(l10n.profileSaving)
+                ])
+              : Text(isSummary ? l10n.profileFinish : l10n.profileContinue)),
     ]);
   }
 }

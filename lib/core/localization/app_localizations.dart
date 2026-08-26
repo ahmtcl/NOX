@@ -287,6 +287,22 @@ class AppLocalizations {
     'emotionalSafety': ['Duygusal güven', 'Emotional safety'],
   };
 
+  String get profileSaving =>
+      isTurkish ? 'Profilin hazırlanıyor...' : 'Preparing your profile...';
+  String get profileCompleted =>
+      isTurkish ? 'Profil tamamlandı.' : 'Profile completed.';
+  String get profileSaveFailed => isTurkish
+      ? 'Profilin kaydedilemedi. İnternet bağlantını kontrol edip tekrar deneyebilirsin.'
+      : 'Your profile could not be saved. Check your internet connection and try again.';
+  String get profileRetry => isTurkish ? 'Tekrar dene' : 'Try again';
+  String get profileGenericError =>
+      isTurkish ? 'Bir hata oluştu.' : 'Something went wrong.';
+  String get homePlaceholderTitle =>
+      isTurkish ? 'Profilin hazır.' : 'Your profile is ready.';
+  String get homePlaceholderBody => isTurkish
+      ? 'Keşif deneyimi yakında burada olacak.'
+      : 'Your discovery experience will be here soon.';
+
   String onboardingTitle(int index) => switch (index) {
         0 => isTurkish
             ? 'Fotoğraftan önce kişiyi tanı.'

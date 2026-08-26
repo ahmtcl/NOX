@@ -7,6 +7,7 @@ import '../domain/profile_setup_draft.dart';
 abstract interface class ProfileSetupDraftStore {
   Future<ProfileSetupDraft> load();
   Future<void> save(ProfileSetupDraft draft);
+  Future<void> clear();
 }
 
 class SharedPreferencesProfileSetupDraftStore
@@ -30,4 +31,8 @@ class SharedPreferencesProfileSetupDraftStore
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_key, jsonEncode(draft.toJson()));
   }
+
+  @override
+  Future<void> clear() async =>
+      (await SharedPreferences.getInstance()).remove(_key);
 }

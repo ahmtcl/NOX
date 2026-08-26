@@ -71,4 +71,9 @@ class _MemoryDraftStore implements ProfileSetupDraftStore {
   Future<void> save(ProfileSetupDraft draft) async {
     value = draft;
   }
+
+  @override
+  Future<void> clear() async {
+    value = const ProfileSetupDraft();
+  }
 }

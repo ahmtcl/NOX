@@ -35,6 +35,12 @@ class DiscoveryController extends AsyncNotifier<List<PublicProfile>> {
     state = await AsyncValue.guard(_load);
   }
 
+  void removeProfile(String uid) {
+    final profiles = state.valueOrNull;
+    if (profiles == null) return;
+    state = AsyncData(profiles.where((profile) => profile.uid != uid).toList());
+  }
+
   Future<void> loadMore() async {
     if (_loadingMore || _cursor == null) return;
     final uid = ref.read(authControllerProvider).user?.id;

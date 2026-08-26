@@ -315,6 +315,16 @@ class AppLocalizations {
   String get discoveryError =>
       isTurkish ? 'Bir şeyler ters gitti.' : 'Something went wrong.';
   String get discoveryLoadMore => isTurkish ? 'Daha fazlasını gör' : 'See more';
+  String get discoveryPass => isTurkish ? 'Geç' : 'Pass';
+  String get discoveryLike => isTurkish ? 'İlgimi Çekti' : 'I\'m interested';
+  String get discoverySpecialInterest =>
+      isTurkish ? 'Özel İlgi' : 'Special Interest';
+  String get discoverySpecialInterestBody => isTurkish
+      ? 'Bu kişiye diğerlerinden farklı olduğunu hissettir.'
+      : 'Let this person know they stand out from the rest.';
+  String get discoveryExplorePremium =>
+      isTurkish ? 'Premium\'u Keşfet' : 'Explore Premium';
+  String get discoveryNotNow => isTurkish ? 'Şimdi Değil' : 'Not now';
   String get discoveryProfile => isTurkish ? 'Profil' : 'Profile';
   String get discoveryAnonymous => isTurkish ? 'NOX üyesi' : 'NOX member';
   String get discoveryPersonality => isTurkish ? 'Kişilik' : 'Personality';

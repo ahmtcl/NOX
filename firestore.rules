@@ -66,6 +66,23 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow read, update, delete: if false;
     }
+    match /interactions/{interactionId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['fromUid', 'toUid', 'type', 'specialInterestReason', 'createdAt', 'updatedAt'])
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && request.resource.data.type in ['pass', 'like', 'specialInterest']
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && ((request.resource.data.type == 'specialInterest' && request.resource.data.specialInterestReason in ['personality','humor','music','lifestyle','profileEnergy','overall']) || (request.resource.data.type != 'specialInterest' && !('specialInterestReason' in request.resource.data)));
+      allow read: if signedIn() && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow update: if signedIn() && resource.data.fromUid == request.auth.uid
+        && request.resource.data.fromUid == resource.data.fromUid
+        && request.resource.data.toUid == resource.data.toUid
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

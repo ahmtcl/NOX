@@ -8,8 +8,8 @@ import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/legal_placeholder_page.dart';
 import '../../features/profile/presentation/profile_setup_page.dart';
-import '../../features/profile/presentation/profile_home_placeholder_page.dart';
 import '../../features/profile/application/profile_completion_provider.dart';
+import '../../features/discovery/presentation/discovery_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/verify_email_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
@@ -72,8 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/profile/setup',
           builder: (context, state) => const ProfileSetupPage()),
       GoRoute(
-          path: '/home',
-          builder: (context, state) => const ProfileHomePlaceholderPage()),
+          path: '/home', builder: (context, state) => const DiscoveryPage()),
       GoRoute(
           path: '/legal/privacy',
           builder: (context, state) =>

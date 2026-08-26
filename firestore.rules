@@ -36,7 +36,13 @@ service cloud.firestore {
         && request.resource.data.uid == uid;
       allow delete: if false;
     }
-    match /public_profiles/{uid} { allow read: if signedIn(); allow create, update: if self(uid); allow delete: if false; }
+    match /publicProfiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if self(uid)
+        && onlyKeys(['uid', 'displayName', 'age', 'city', 'bio', 'photoUrls', 'personalityTraits', 'freeTimePreferences', 'datePreferences', 'conversationStyles', 'lifeGoals', 'musicPreferences', 'travelStyles', 'connectionValues', 'discoveryEnabled', 'updatedAt'])
+        && request.resource.data.uid == uid;
+      allow delete: if false;
+    }
     match /private_profiles/{uid} { allow read, write: if self(uid); }
     match /blocks/{uid}/items/{blockedUid} { allow read, write: if self(uid); }
     match /reports/{reportId} { allow create: if signedIn(); allow read, update, delete: if false; }

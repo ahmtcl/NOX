@@ -303,6 +303,37 @@ class AppLocalizations {
       ? 'Keşif deneyimi yakında burada olacak.'
       : 'Your discovery experience will be here soon.';
 
+  String get discoveryTitle =>
+      isTurkish ? 'Bugün kimle tanışacaksın?' : 'Meet someone new.';
+  String get discoveryEmpty => isTurkish
+      ? 'Şimdilik burada sessizlik var.'
+      : 'It is quiet here for now.';
+  String get discoveryEmptyBody => isTurkish
+      ? 'NOX\'ta yeni insanlar ortaya çıktıkça burada olacaklar.'
+      : 'New people will appear here as they join NOX.';
+  String get discoveryError =>
+      isTurkish ? 'Bir şeyler ters gitti.' : 'Something went wrong.';
+  String get discoveryLoadMore => isTurkish ? 'Daha fazlasını gör' : 'See more';
+  String get discoveryProfile => isTurkish ? 'Profil' : 'Profile';
+  String get discoveryAnonymous => isTurkish ? 'NOX üyesi' : 'NOX member';
+  String get discoveryPersonality => isTurkish ? 'Kişilik' : 'Personality';
+  String get discoveryFreeTime => isTurkish ? 'Boş zaman' : 'Free time';
+  String get discoveryDate => isTurkish ? 'Buluşma tarzı' : 'Date style';
+  String get discoveryConversation => isTurkish ? 'Sohbet' : 'Conversation';
+  String get discoveryLifeGoals => isTurkish ? 'Hayat hedefleri' : 'Life goals';
+  String get discoveryMusic => isTurkish ? 'Müzik' : 'Music';
+  String get discoveryTravel => isTurkish ? 'Seyahat' : 'Travel';
+  String get discoveryConnection => isTurkish ? 'Bağ kurmak' : 'Connection';
+  String get discoveryReport =>
+      isTurkish ? 'Profil hakkında bildir' : 'Report profile';
+  String get discoveryBlock => isTurkish ? 'Engelle' : 'Block';
+  String get discoverySafetyPlaceholder => isTurkish
+      ? 'Bu güvenlik aksiyonu yakında kullanılabilecek.'
+      : 'This safety action will be available soon.';
+  String discoverySemantic(
+          String? name, int? age, String? city, List<String> tags) =>
+      '${name ?? discoveryAnonymous}${age == null ? '' : ', $age'}${city == null ? '' : ', $city'}. ${tags.join(', ')}';
+
   String onboardingTitle(int index) => switch (index) {
         0 => isTurkish
             ? 'Fotoğraftan önce kişiyi tanı.'

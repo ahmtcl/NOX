@@ -316,6 +316,36 @@ class AppLocalizations {
   String get discoveryError =>
       isTurkish ? 'Bir şeyler ters gitti.' : 'Something went wrong.';
   String get discoveryLoadMore => isTurkish ? 'Daha fazlasını gör' : 'See more';
+  String get discoveryIncomingTitle =>
+      isTurkish ? '✨ Sana İlgi Var' : '✨ You Have Interest';
+  String discoveryIncomingLikes(int count) => isTurkish
+      ? '$count kişi seni beğendi.'
+      : '$count ${count == 1 ? 'person likes' : 'people like'} you.';
+  String discoveryIncomingSpecialInterests(int count) => isTurkish
+      ? '✦ $count kişi sana Özel İlgi gönderdi.'
+      : '✦ $count ${count == 1 ? 'person sent' : 'people sent'} you Special Interest.';
+  String get discoveryIncomingEmptyTitle => isTurkish
+      ? 'Henüz sana ulaşan bir ilgi yok.'
+      : 'No interest has reached you yet.';
+  String get discoveryIncomingEmptyBody => isTurkish
+      ? 'Belki de ilk kıvılcım birazdan gelir.'
+      : 'Maybe the first spark is just around the corner.';
+  String get discoveryIncomingContinue =>
+      isTurkish ? 'Keşfetmeye Devam Et' : 'Keep discovering';
+  String get discoveryIncomingView =>
+      isTurkish ? 'İlgileri Gör' : 'View interests';
+  String get discoveryIncomingViewPremium =>
+      isTurkish ? 'Seni Beğenenleri Gör' : 'See who likes you';
+  String get discoveryIncomingUnavailable => isTurkish
+      ? 'İlgiler şu anda yüklenemiyor.'
+      : 'Interests cannot be loaded right now.';
+  String get discoveryIncomingRetry => isTurkish ? 'Tekrar dene' : 'Try again';
+  String get discoveryIncomingPlaceholder => isTurkish
+      ? 'İlgi ayrıntıları yakında burada olacak.'
+      : 'Interest details will be available here soon.';
+  String discoveryIncomingSemantic(int likes, int specialInterests, bool empty) => empty
+      ? '$discoveryIncomingTitle. $discoveryIncomingEmptyTitle $discoveryIncomingEmptyBody'
+      : '$discoveryIncomingTitle. ${discoveryIncomingLikes(likes)}${specialInterests == 0 ? '' : ' ${discoveryIncomingSpecialInterests(specialInterests)}'}';
   String get discoveryPass => isTurkish ? 'Geç' : 'Pass';
   String get discoveryLike => isTurkish ? 'İlgimi Çekti' : 'I\'m interested';
   String get discoverySpecialInterest =>

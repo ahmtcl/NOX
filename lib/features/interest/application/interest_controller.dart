@@ -10,6 +10,9 @@ final interestRepositoryProvider = Provider<InterestRepository>((ref) =>
 final interestControllerProvider =
     NotifierProvider<InterestController, AsyncValue<void>>(
         InterestController.new);
+final incomingInterestSummaryProvider =
+    FutureProvider.family<IncomingInterestSummary, String>((ref, uid) =>
+        ref.read(interestRepositoryProvider).incomingSummary(uid));
 
 class InterestController extends Notifier<AsyncValue<void>> {
   var _busy = false;

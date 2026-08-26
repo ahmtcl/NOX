@@ -179,6 +179,77 @@ void main() {
     expect(english.discoverySpecialInterestReason(SpecialInterestReason.humor),
         'Humor');
   });
+
+  testWidgets('incoming interest card shows real like and special counts',
+      (tester) async {
+    final harness = _Harness(
+        summary: const IncomingInterestSummary(likes: 4, specialInterests: 1));
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('✨ Sana İlgi Var'), findsOneWidget);
+    expect(find.text('4 kişi seni beğendi.'), findsOneWidget);
+    expect(find.text('✦ 1 kişi sana Özel İlgi gönderdi.'), findsOneWidget);
+  });
+
+  testWidgets('incoming card hides zero special interest count',
+      (tester) async {
+    final harness = _Harness(summary: const IncomingInterestSummary(likes: 2));
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 kişi seni beğendi.'), findsOneWidget);
+    expect(find.textContaining('sana Özel İlgi gönderdi.'), findsNothing);
+  });
+
+  testWidgets('incoming card shows its positive empty state', (tester) async {
+    final harness = _Harness();
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Henüz sana ulaşan bir ilgi yok.'), findsOneWidget);
+    expect(find.text('Belki de ilk kıvılcım birazdan gelir.'), findsOneWidget);
+  });
+
+  testWidgets('incoming card renders a skeleton while the summary loads',
+      (tester) async {
+    final harness = _Harness(summaryCompleter: Completer());
+    await tester.pumpWidget(harness.app());
+    await tester.pump();
+
+    expect(find.text('✨ Sana İlgi Var'), findsNothing);
+    expect(find.byType(DecoratedBox), findsWidgets);
+  });
+
+  testWidgets('incoming card isolates its load error and supports retry',
+      (tester) async {
+    final harness = _Harness(summaryFails: true);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('İlgiler şu anda yüklenemiyor.'), findsOneWidget);
+    expect(find.text('Tekrar dene'), findsOneWidget);
+  });
+
+  testWidgets('incoming card uses free and premium CTA labels', (tester) async {
+    final free = _Harness(summary: const IncomingInterestSummary(likes: 1));
+    await tester.pumpWidget(free.app());
+    await tester.pumpAndSettle();
+    expect(find.text('İlgileri Gör'), findsOneWidget);
+
+    final premium = _Harness(
+        isPremium: true, summary: const IncomingInterestSummary(likes: 1));
+    await tester.pumpWidget(premium.app());
+    await tester.pumpAndSettle();
+    expect(find.text('Seni Beğenenleri Gör'), findsOneWidget);
+  });
+
+  test('incoming interest localization supports Turkish and English', () {
+    expect(AppLocalizations(const Locale('tr')).discoveryIncomingLikes(1),
+        '1 kişi seni beğendi.');
+    expect(AppLocalizations(const Locale('en')).discoveryIncomingLikes(2),
+        '2 people like you.');
+  });
 }
 
 Future<void> _openReasonSheet(WidgetTester tester) async {
@@ -190,9 +261,16 @@ class _Harness {
   factory _Harness(
       {bool isPremium = false,
       bool shouldFail = false,
-      Completer<void>? submitCompleter}) {
+      Completer<void>? submitCompleter,
+      IncomingInterestSummary summary = const IncomingInterestSummary(),
+      bool summaryFails = false,
+      Completer<IncomingInterestSummary>? summaryCompleter}) {
     final repository = _FakeInterestRepository(
-        shouldFail: shouldFail, submitCompleter: submitCompleter);
+        shouldFail: shouldFail,
+        submitCompleter: submitCompleter,
+        summary: summary,
+        summaryFails: summaryFails,
+        summaryCompleter: summaryCompleter);
     return _Harness._(
         isPremium: isPremium,
         repository: repository,
@@ -239,11 +317,19 @@ class _TestDiscoveryController extends DiscoveryController {
 }
 
 class _FakeInterestRepository implements InterestRepository {
-  _FakeInterestRepository({this.shouldFail = false, this.submitCompleter});
+  _FakeInterestRepository(
+      {this.shouldFail = false,
+      this.submitCompleter,
+      this.summary = const IncomingInterestSummary(),
+      this.summaryFails = false,
+      this.summaryCompleter});
 
   final items = <Interaction>[];
   final bool shouldFail;
   final Completer<void>? submitCompleter;
+  final IncomingInterestSummary summary;
+  final bool summaryFails;
+  final Completer<IncomingInterestSummary>? summaryCompleter;
 
   @override
   Future<void> submit(Interaction interaction) async {
@@ -257,4 +343,10 @@ class _FakeInterestRepository implements InterestRepository {
 
   @override
   Future<Set<String>> getOutgoingIds(String uid) async => {};
+
+  @override
+  Future<IncomingInterestSummary> incomingSummary(String uid) async {
+    if (summaryFails) throw const InterestFailure('loadFailed');
+    return summaryCompleter?.future ?? summary;
+  }
 }

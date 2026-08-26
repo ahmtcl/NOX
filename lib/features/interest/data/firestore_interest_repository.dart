@@ -46,4 +46,41 @@ class FirestoreInterestRepository implements InterestRepository {
               .get())
           .count ??
       0;
+
+  @override
+  Future<IncomingInterestSummary> incomingSummary(String uid) async {
+    try {
+      final blocked =
+          _safety == null ? <String>{} : await _safety.getBlockedUserIds(uid);
+      final counts = await Future.wait([
+        _incomingCountExcludingBlocked(uid, InteractionType.like, blocked),
+        _incomingCountExcludingBlocked(
+            uid, InteractionType.specialInterest, blocked)
+      ]);
+      return IncomingInterestSummary(
+          likes: counts[0], specialInterests: counts[1]);
+    } on FirebaseException catch (e) {
+      throw InterestFailure(
+          e.code == 'unavailable' ? 'networkError' : 'loadFailed');
+    }
+  }
+
+  Future<int> _incomingCountExcludingBlocked(
+      String uid, InteractionType type, Set<String> blocked) async {
+    final query = _db
+        .collection('interactions')
+        .where('toUid', isEqualTo: uid)
+        .where('type', isEqualTo: type.name);
+    final total = (await query.count().get()).count ?? 0;
+    if (blocked.isEmpty || total == 0) return total;
+    var excluded = 0;
+    final ids = blocked.toList();
+    for (var index = 0; index < ids.length; index += 10) {
+      final batch = ids.sublist(index, (index + 10).clamp(0, ids.length));
+      excluded +=
+          (await query.where('fromUid', whereIn: batch).count().get()).count ??
+              0;
+    }
+    return (total - excluded).clamp(0, total).toInt();
+  }
 }

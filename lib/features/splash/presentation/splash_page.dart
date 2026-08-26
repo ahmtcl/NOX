@@ -10,12 +10,10 @@ import '../../onboarding/application/onboarding_providers.dart';
 import '../../onboarding/presentation/widgets/nox_atmosphere.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
-  const SplashPage(
-    {
-      super.key,
-      this.minimumDisplayDuration = const Duration(milliseconds: 900),
-    }
-  );
+  const SplashPage({
+    super.key,
+    this.minimumDisplayDuration = const Duration(milliseconds: 900),
+  });
 
   final Duration minimumDisplayDuration;
 

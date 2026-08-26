@@ -31,6 +31,261 @@ class AppLocalizations {
   String get authPlaceholderBody => isTurkish
       ? 'Güvenli başlangıç akışı yakında burada olacak.'
       : 'The secure sign-in flow will be here soon.';
+  String get authWelcome => isTurkish
+      ? 'Bağlantılar bir yerden başlar.'
+      : 'Every connection starts somewhere.';
+  String get login => isTurkish ? 'Giriş Yap' : 'Sign in';
+  String get register => isTurkish ? 'Kayıt Ol' : 'Create account';
+  String get email => isTurkish ? 'E-posta' : 'Email';
+  String get password => isTurkish ? 'Şifre' : 'Password';
+  String get confirmPassword => isTurkish ? 'Şifre Tekrar' : 'Confirm password';
+  String get forgotPassword =>
+      isTurkish ? 'Şifremi Unuttum' : 'Forgot password';
+  String get resetPassword => isTurkish
+      ? 'Şifre Sıfırlama Bağlantısı Gönder'
+      : 'Send password reset link';
+  String get resetSent => isTurkish
+      ? 'Eğer bu e-posta ile bir hesap varsa, sıfırlama bağlantısı gönderildi.'
+      : 'If an account exists for this email, a reset link has been sent.';
+  String get noAccount =>
+      isTurkish ? 'Hesabın yok mu?' : "Don't have an account?";
+  String get haveAccount =>
+      isTurkish ? 'Zaten hesabın var mı?' : 'Already have an account?';
+  String get ageRequirement => isTurkish
+      ? 'NOX yalnızca 18 yaş ve üzeri kullanıcılar içindir.'
+      : 'NOX is for people aged 18 and over.';
+  String get passwordRequirements => isTurkish
+      ? 'En az 8 karakter; büyük harf, küçük harf ve rakam içermeli.'
+      : 'Use at least 8 characters with an uppercase letter, lowercase letter, and number.';
+  String get securityMessage => isTurkish
+      ? 'Güvenliğin ve gizliliğin bizim için önemli.'
+      : 'Your safety and privacy matter to us.';
+  String get privacy => isTurkish ? 'Gizlilik' : 'Privacy';
+  String get terms => isTurkish ? 'Koşullar' : 'Terms';
+  String get privacyPolicyTitle =>
+      isTurkish ? 'Gizlilik Politikası' : 'Privacy Policy';
+  String get termsOfServiceTitle =>
+      isTurkish ? 'Kullanım Koşulları' : 'Terms of Service';
+  String get privacyPolicyPlaceholder => isTurkish
+      ? 'Gizlilik Politikası metni yakında burada yayınlanacak.'
+      : 'The Privacy Policy will be published here soon.';
+  String get termsOfServicePlaceholder => isTurkish
+      ? 'Kullanım Koşulları metni yakında burada yayınlanacak.'
+      : 'The Terms of Service will be published here soon.';
+  String get continueWithGoogle =>
+      isTurkish ? 'Google ile devam et' : 'Continue with Google';
+  String get continueWithApple =>
+      isTurkish ? 'Apple ile devam et' : 'Continue with Apple';
+  String get or => isTurkish ? 'veya' : 'or';
+  String get verificationTitle =>
+      isTurkish ? 'E-postanı doğrula' : 'Verify your email';
+  String verificationBody(String? email) => isTurkish
+      ? '${email ?? 'E-posta adresine'} bir doğrulama bağlantısı gönderdik. Spam klasörünü de kontrol etmeyi unutma.'
+      : 'We sent a verification link to ${email ?? 'your email address'}. Please check your spam folder too.';
+  String get resendVerification => isTurkish
+      ? 'Doğrulama E-postasını Tekrar Gönder'
+      : 'Resend verification email';
+  String get checkVerification =>
+      isTurkish ? 'Kontrol Et' : 'Check verification';
+  String get logout => isTurkish ? 'Çıkış Yap' : 'Sign out';
+  String get loading => isTurkish ? 'Lütfen bekle…' : 'Please wait…';
+  String get profileSetupTitle =>
+      isTurkish ? 'Profil kurulumu' : 'Profile setup';
+  String get profileSetupBody => isTurkish
+      ? 'Profil bilgilerin bir sonraki aşamada güvenle alınacak.'
+      : 'Your profile details will be collected safely in the next step.';
+  String get requiredField =>
+      isTurkish ? 'Bu alan zorunludur.' : 'This field is required.';
+  String get invalidEmail => isTurkish
+      ? 'Geçerli bir e-posta adresi gir.'
+      : 'Enter a valid email address.';
+  String get passwordsDoNotMatch =>
+      isTurkish ? 'Şifreler eşleşmiyor.' : 'Passwords do not match.';
+  String get passwordNotStrong => isTurkish
+      ? 'Şifre gereksinimleri karşılamıyor.'
+      : 'Your password does not meet the requirements.';
+  String authError(String? code) => switch (code) {
+        'invalidCredentials' => isTurkish
+            ? 'E-posta veya şifre hatalı. Bilgilerini kontrol edip tekrar deneyebilirsin.'
+            : 'The email or password is incorrect. Please check and try again.',
+        'emailAlreadyInUse' => isTurkish
+            ? 'Bu e-posta ile zaten bir hesap var.'
+            : 'An account already exists with this email.',
+        'weakPassword' => passwordNotStrong,
+        'invalidEmail' => invalidEmail,
+        'tooManyRequests' => isTurkish
+            ? 'Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar dene.'
+            : 'Too many attempts. Please try again later.',
+        'networkError' => isTurkish
+            ? 'Bağlantını kontrol edip tekrar dene.'
+            : 'Check your connection and try again.',
+        'userDisabled' => isTurkish
+            ? 'Bu hesap devre dışı bırakılmış.'
+            : 'This account has been disabled.',
+        'signInCancelled' =>
+          isTurkish ? 'Giriş işlemi iptal edildi.' : 'Sign-in was cancelled.',
+        _ => isTurkish
+            ? 'Bir sorun oluştu. Lütfen tekrar dene.'
+            : 'Something went wrong. Please try again.',
+      };
+
+  String get profileDiscoveryEyebrow =>
+      isTurkish ? 'KİŞİLİĞİNİ KEŞFET' : 'DISCOVER YOUR VIBE';
+  String get profileDiscoveryTitle => isTurkish
+      ? 'Seni sen yapan küçük detaylar.'
+      : 'The small details that make you, you.';
+  String get profileDiscoveryBody => isTurkish
+      ? 'Yanıtların profilini tamamlamak için yalnızca cihazında saklanır.'
+      : 'Your answers stay on this device while you build your profile.';
+  String selectionHint(int minimum, int maximum) => isTurkish
+      ? 'En az $minimum, en fazla $maximum seçim yap.'
+      : 'Choose at least $minimum and up to $maximum.';
+  String selectedCount(int count, int maximum) =>
+      isTurkish ? '$count / $maximum seçildi' : '$count / $maximum selected';
+  String get profileContinue => isTurkish ? 'Devam et' : 'Continue';
+  String get profileSkip => isTurkish ? 'Şimdilik geç' : 'Skip for now';
+  String get profileBack => isTurkish ? 'Geri' : 'Back';
+  String get profilePersonalTitle => isTurkish
+      ? 'Birini sana yaklaştıracak bir cümle yaz.'
+      : 'Write one line that brings someone closer to you.';
+  String get profilePersonalBody => isTurkish
+      ? 'Kısa, gerçek ve sana ait olsun.'
+      : 'Keep it short, honest, and distinctly yours.';
+  String get profilePersonalHint => isTurkish
+      ? 'Örneğin: En iyi sohbetler plansız başlayanlardır.'
+      : 'For example: The best conversations are the unplanned ones.';
+  String charactersRemaining(int count) =>
+      isTurkish ? '$count karakter kaldı' : '$count characters remaining';
+  String get profileSummaryEyebrow =>
+      isTurkish ? 'PROFİL ÖZETİ' : 'PROFILE SUMMARY';
+  String get profileSummaryTitle => isTurkish
+      ? 'Bağlantın düşüncelerinle başlasın.'
+      : 'Let your connection start with your thoughts.';
+  String get profileSummaryBody => isTurkish
+      ? 'Bu yanıtları daha sonra profilinde düzenleyebilirsin.'
+      : 'You can refine these answers in your profile later.';
+  String get profileFinish =>
+      isTurkish ? 'Profili tamamla' : 'Complete profile';
+  String get profileSaved => isTurkish
+      ? 'Taslağın bu cihazda kaydedildi.'
+      : 'Your draft is saved on this device.';
+  String profileQuestion(String key) =>
+      _profileQuestionLabels[key]?[isTurkish ? 0 : 1] ?? key;
+  String profileOption(String id) =>
+      _profileOptionLabels[id]?[isTurkish ? 0 : 1] ?? id;
+
+  static const _profileQuestionLabels = <String, List<String>>{
+    'personality': [
+      'Seni en iyi hangi özellikler anlatır?',
+      'Which qualities describe you best?'
+    ],
+    'freeEvening': [
+      'Boş bir akşamın nasıl geçer?',
+      'How do you spend a free evening?'
+    ],
+    'attraction': [
+      'Bir insanda seni ne etkiler?',
+      'What draws you to someone?'
+    ],
+    'firstDate': [
+      'İlk buluşma fikrin nedir?',
+      'What sounds like a great first date?'
+    ],
+    'conversation': [
+      'Sohbette neyi seversin?',
+      'What do you enjoy in a conversation?'
+    ],
+    'lifeGoals': [
+      'Hayatta seni ne ileri taşır?',
+      'What moves you forward in life?'
+    ],
+    'weekend': ['İdeal hafta sonun?', 'Your ideal weekend?'],
+    'music': ['Müzik dünyanda ne var?', 'What is in your music world?'],
+    'travel': ['Seyahat tarzın?', 'Your travel style?'],
+    'connection': [
+      'Gerçek bir bağ senin için nedir?',
+      'What makes a real connection for you?'
+    ],
+  };
+
+  static const _profileOptionLabels = <String, List<String>>{
+    'curious': ['Meraklı', 'Curious'],
+    'funny': ['Komik', 'Funny'],
+    'smart': ['Zeki', 'Smart'],
+    'calm': ['Sakin', 'Calm'],
+    'passionate': ['Tutkulu', 'Passionate'],
+    'mysterious': ['Gizemli', 'Mysterious'],
+    'creative': ['Yaratıcı', 'Creative'],
+    'kind': ['Nazik', 'Kind'],
+    'adventurous': ['Maceracı', 'Adventurous'],
+    'ambitious': ['Hırslı', 'Ambitious'],
+    'romantic': ['Romantik', 'Romantic'],
+    'playful': ['Oyuncu ruhlu', 'Playful'],
+    'thoughtful': ['Düşünceli', 'Thoughtful'],
+    'social': ['Sosyal', 'Social'],
+    'independent': ['Bağımsız', 'Independent'],
+    'optimistic': ['İyimser', 'Optimistic'],
+    'spontaneous': ['Spontane', 'Spontaneous'],
+    'loyal': ['Sadık', 'Loyal'],
+    'gentle': ['Yumuşak kalpli', 'Gentle'],
+    'bold': ['Cesur', 'Bold'],
+    'book': ['Kitap', 'Reading'],
+    'series': ['Dizi', 'Series'],
+    'friends': ['Arkadaşlar', 'Friends'],
+    'music': ['Müzik', 'Music'],
+    'walk': ['Gece yürüyüşü', 'A night walk'],
+    'game': ['Oyun', 'Gaming'],
+    'humor': ['Mizah', 'Humor'],
+    'intelligence': ['Zekâ', 'Intelligence'],
+    'kindness': ['İyilik', 'Kindness'],
+    'confidence': ['Özgüven', 'Confidence'],
+    'curiosity': ['Merak', 'Curiosity'],
+    'ambition': ['Hırs', 'Ambition'],
+    'calmEnergy': ['Sakin enerji', 'Calm energy'],
+    'honesty': ['Dürüstlük', 'Honesty'],
+    'coffee': ['Kahve', 'Coffee'],
+    'museum': ['Müze', 'Museum'],
+    'walkDate': ['Yürüyüş', 'A walk'],
+    'dinner': ['Akşam yemeği', 'Dinner'],
+    'concert': ['Konser', 'Concert'],
+    'activity': ['Bir aktivite', 'An activity'],
+    'deepTalk': ['Derin sohbet', 'Deep talk'],
+    'banter': ['Tatlı atışma', 'Playful banter'],
+    'ideas': ['Fikirler', 'Ideas'],
+    'stories': ['Hikâyeler', 'Stories'],
+    'listening': ['Dinlemek', 'Listening'],
+    'questions': ['İyi sorular', 'Good questions'],
+    'growth': ['Gelişim', 'Growth'],
+    'career': ['Kariyer', 'Career'],
+    'family': ['Aile', 'Family'],
+    'travelGoal': ['Dünyayı görmek', 'Seeing the world'],
+    'impact': ['Etki yaratmak', 'Making an impact'],
+    'balance': ['Denge', 'Balance'],
+    'slowMorning': ['Yavaş bir sabah', 'A slow morning'],
+    'outdoors': ['Dışarıda olmak', 'Being outdoors'],
+    'city': ['Şehirde kaybolmak', 'City wandering'],
+    'hosting': ['Sofra kurmak', 'Hosting friends'],
+    'exploring': ['Yeni yerler', 'Exploring'],
+    'resting': ['Dinlenmek', 'Resting'],
+    'indie': ['Indie', 'Indie'],
+    'pop': ['Pop', 'Pop'],
+    'electronic': ['Elektronik', 'Electronic'],
+    'hiphop': ['Hip-hop', 'Hip-hop'],
+    'jazz': ['Caz', 'Jazz'],
+    'mixed': ['Her şeyden biraz', 'A bit of everything'],
+    'beach': ['Sahil', 'Beach'],
+    'cityBreak': ['Şehir kaçamağı', 'City break'],
+    'nature': ['Doğa', 'Nature'],
+    'roadTrip': ['Yolculuk', 'Road trip'],
+    'culture': ['Kültür', 'Culture'],
+    'staycation': ['Evde keşif', 'Staycation'],
+    'trust': ['Güven', 'Trust'],
+    'chemistry': ['Kimya', 'Chemistry'],
+    'sharedValues': ['Ortak değerler', 'Shared values'],
+    'growthTogether': ['Birlikte gelişmek', 'Growing together'],
+    'funTogether': ['Birlikte gülmek', 'Having fun together'],
+    'emotionalSafety': ['Duygusal güven', 'Emotional safety'],
+  };
 
   String onboardingTitle(int index) => switch (index) {
         0 => isTurkish

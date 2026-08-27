@@ -83,6 +83,19 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
+    match /matches/{matchId} {
+      allow read: if signedIn() && (resource.data.userAUid == request.auth.uid || resource.data.userBUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userAUid', 'userBUid', 'createdAt', 'updatedAt', 'status'])
+        && request.resource.data.status == 'active'
+        && request.resource.data.userAUid < request.resource.data.userBUid
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.userAUid + '_' + request.resource.data.userBUid))
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.userBUid + '_' + request.resource.data.userAUid))
+        && get(/databases/$(database)/documents/interactions/$(request.resource.data.userAUid + '_' + request.resource.data.userBUid)).data.type in ['like','specialInterest']
+        && get(/databases/$(database)/documents/interactions/$(request.resource.data.userBUid + '_' + request.resource.data.userAUid)).data.type in ['like','specialInterest'];
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

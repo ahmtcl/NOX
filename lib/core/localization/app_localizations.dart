@@ -318,6 +318,12 @@ class AppLocalizations {
   String get discoveryLoadMore => isTurkish ? 'Daha fazlasını gör' : 'See more';
   String get discoveryIncomingTitle =>
       isTurkish ? '✨ Sana İlgi Var' : '✨ You Have Interest';
+  String get incomingInterestsTitle =>
+      isTurkish ? '✨ Sana İlgi Gösterenler' : '✨ People interested in you';
+  String get incomingPremiumBody => isTurkish
+      ? 'Belki de aradığın kişi seni çoktan fark etti.'
+      : 'Maybe the person you seek has already noticed you.';
+  String get incomingLikeLabel => isTurkish ? '♡ İlgimi Çekti' : '♡ Interested';
   String discoveryIncomingLikes(int count) => isTurkish
       ? '$count kişi seni beğendi.'
       : '$count ${count == 1 ? 'person likes' : 'people like'} you.';

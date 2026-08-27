@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/nox_theme.dart';
 import '../../auth/application/auth_controller.dart';
@@ -112,9 +113,7 @@ class DiscoveryPage extends ConsumerWidget {
   }
 
   void _showIncomingPlaceholder(BuildContext context) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content:
-              Text(AppLocalizations.of(context).discoveryIncomingPlaceholder)));
+      context.push('/discovery/interests');
 
   Future<void> _sendInteraction(BuildContext context, WidgetRef ref,
       PublicProfile profile, InteractionType type) async {

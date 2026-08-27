@@ -9,6 +9,7 @@ class DiscoveryPage {
 
 abstract interface class DiscoveryRepository {
   Future<PublicProfile?> getPublicProfile(String uid);
+  Future<Map<String, PublicProfile>> getPublicProfilesByIds(Set<String> uids);
   Future<DiscoveryPage> getDiscoveryProfiles(
       {required String currentUid, Object? cursor, int pageSize = 10});
   Future<void> createOrUpdatePublicProfile(PublicProfile profile);

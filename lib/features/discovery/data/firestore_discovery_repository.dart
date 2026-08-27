@@ -18,6 +18,25 @@ class FirestoreDiscoveryRepository implements DiscoveryRepository {
   }
 
   @override
+  Future<Map<String, PublicProfile>> getPublicProfilesByIds(
+      Set<String> uids) async {
+    if (uids.isEmpty) return {};
+    try {
+      final docs = await _firestore
+          .collection('publicProfiles')
+          .where(FieldPath.documentId, whereIn: uids.take(10).toList())
+          .get();
+      return {
+        for (final doc in docs.docs)
+          doc.id: PublicProfile.fromFirestore(doc.data())
+      };
+    } on FirebaseException catch (e) {
+      throw DiscoveryFailure(
+          e.code == 'unavailable' ? 'networkError' : 'loadFailed');
+    }
+  }
+
+  @override
   Future<DiscoveryPage> getDiscoveryProfiles(
       {required String currentUid, Object? cursor, int pageSize = 10}) async {
     try {

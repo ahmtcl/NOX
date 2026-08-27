@@ -349,4 +349,9 @@ class _FakeInterestRepository implements InterestRepository {
     if (summaryFails) throw const InterestFailure('loadFailed');
     return summaryCompleter?.future ?? summary;
   }
+
+  @override
+  Future<IncomingInteractionPage> getIncomingInteractions(String uid,
+          {Object? cursor, int pageSize = 10}) async =>
+      const IncomingInteractionPage(items: []);
 }

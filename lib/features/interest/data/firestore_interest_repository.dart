@@ -83,4 +83,51 @@ class FirestoreInterestRepository implements InterestRepository {
     }
     return (total - excluded).clamp(0, total).toInt();
   }
+
+  @override
+  Future<IncomingInteractionPage> getIncomingInteractions(String uid,
+      {Object? cursor, int pageSize = 10}) async {
+    try {
+      Query<Map<String, dynamic>> query = _db
+          .collection('interactions')
+          .where('toUid', isEqualTo: uid)
+          .where('type', whereIn: [
+            InteractionType.like.name,
+            InteractionType.specialInterest.name
+          ])
+          .orderBy('createdAt', descending: true)
+          .limit(pageSize);
+      if (cursor is DocumentSnapshot<Map<String, dynamic>>) {
+        query = query.startAfterDocument(cursor);
+      }
+      final blocked =
+          _safety == null ? <String>{} : await _safety.getBlockedUserIds(uid);
+      final result = await query.get();
+      final items = <Interaction>[];
+      for (final doc in result.docs) {
+        final data = doc.data();
+        final fromUid = data['fromUid'];
+        if (fromUid is! String || fromUid == uid || blocked.contains(fromUid))
+          continue;
+        final type = data['type'] == InteractionType.specialInterest.name
+            ? InteractionType.specialInterest
+            : InteractionType.like;
+        final reason = SpecialInterestReason.values
+            .cast<SpecialInterestReason?>()
+            .firstWhere((value) => value?.name == data['specialInterestReason'],
+                orElse: () => null);
+        items.add(Interaction(
+            fromUid: fromUid,
+            toUid: uid,
+            type: type,
+            reason: type == InteractionType.specialInterest ? reason : null));
+      }
+      return IncomingInteractionPage(
+          items: items,
+          cursor: result.docs.length == pageSize ? result.docs.last : null);
+    } on FirebaseException catch (e) {
+      throw InterestFailure(
+          e.code == 'unavailable' ? 'networkError' : 'loadFailed');
+    }
+  }
 }

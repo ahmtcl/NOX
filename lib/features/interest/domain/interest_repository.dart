@@ -5,6 +5,15 @@ abstract interface class InterestRepository {
   Future<Set<String>> getOutgoingIds(String uid);
   Future<int> incomingCount(String uid, InteractionType type);
   Future<IncomingInterestSummary> incomingSummary(String uid);
+  Future<IncomingInteractionPage> getIncomingInteractions(String uid,
+      {Object? cursor, int pageSize = 10});
+}
+
+class IncomingInteractionPage {
+  const IncomingInteractionPage({required this.items, this.cursor});
+  final List<Interaction> items;
+  final Object? cursor;
+  bool get hasMore => cursor != null;
 }
 
 class IncomingInterestSummary {

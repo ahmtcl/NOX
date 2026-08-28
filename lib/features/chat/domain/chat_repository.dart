@@ -3,6 +3,8 @@ import 'conversation.dart';
 abstract interface class ChatRepository {
   Future<Conversation?> getConversationForMatch(
       String userAUid, String userBUid);
+  Future<Conversation> createConversationIfNeeded(
+      String userAUid, String userBUid);
 }
 
 class ChatFailure implements Exception {

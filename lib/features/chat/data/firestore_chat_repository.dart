@@ -27,4 +27,16 @@ class FirestoreChatRepository implements ChatRepository {
           e.code == 'unavailable' ? 'networkError' : 'loadFailed');
     }
   }
+
+  @override
+  Future<Conversation> createConversationIfNeeded(
+      String userAUid, String userBUid) async {
+    final existing = await getConversationForMatch(userAUid, userBUid);
+    if (existing != null) return existing;
+    final users = [userAUid, userBUid]..sort();
+    return Conversation(
+        userAUid: users[0],
+        userBUid: users[1],
+        matchId: Conversation.idFor(userAUid, userBUid));
+  }
 }

@@ -7,6 +7,7 @@ import '../../auth/application/auth_controller.dart';
 import '../../interest/application/interest_controller.dart';
 import '../../interest/domain/interaction.dart';
 import '../../interest/domain/interest_repository.dart';
+import '../../match/domain/match.dart';
 import '../application/discovery_controller.dart';
 import '../domain/public_profile.dart';
 import 'public_profile_detail_page.dart';
@@ -119,30 +120,42 @@ class DiscoveryPage extends ConsumerWidget {
       PublicProfile profile, InteractionType type) async {
     final fromUid = ref.read(authControllerProvider).user?.id;
     if (fromUid == null) return;
-    final sent = await ref
+    final result = await ref
         .read(interestControllerProvider.notifier)
-        .send(Interaction(fromUid: fromUid, toUid: profile.uid, type: type));
-    if (sent) {
+        .sendWithMatch(
+            Interaction(fromUid: fromUid, toUid: profile.uid, type: type));
+    if (result.sent) {
       ref.read(discoveryControllerProvider.notifier).removeProfile(profile.uid);
+      if (result.createdMatch != null && context.mounted) {
+        _showMatchFeedback(context);
+      }
     }
   }
 
   Future<void> _handleSpecialInterest(
       BuildContext context, WidgetRef ref, PublicProfile profile) async {
     if (ref.read(premiumStateProvider)) {
+      NoxMatch? createdMatch;
       final sent = await showModalBottomSheet<bool>(
           context: context,
           isScrollControlled: true,
           backgroundColor: NoxColors.elevatedSurface,
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-          builder: (_) => _SpecialInterestReasonSheet(
-              onSubmit: (reason) =>
-                  _submitSpecialInterest(ref, profile, reason)));
+          builder: (_) => _SpecialInterestReasonSheet(onSubmit: (reason) async {
+                final result =
+                    await _submitSpecialInterest(ref, profile, reason);
+                createdMatch = result.createdMatch;
+                return result.sent;
+              }));
       if (sent == true && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                AppLocalizations.of(context).discoverySpecialInterestSent)));
+        if (createdMatch != null) {
+          _showMatchFeedback(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  AppLocalizations.of(context).discoverySpecialInterestSent)));
+        }
       }
       return;
     }
@@ -181,21 +194,45 @@ class DiscoveryPage extends ConsumerWidget {
             ])));
   }
 
-  Future<bool> _submitSpecialInterest(WidgetRef ref, PublicProfile profile,
-      SpecialInterestReason reason) async {
+  Future<InteractionSendResult> _submitSpecialInterest(WidgetRef ref,
+      PublicProfile profile, SpecialInterestReason reason) async {
     final fromUid = ref.read(authControllerProvider).user?.id;
-    if (fromUid == null) return false;
-    final sent = await ref.read(interestControllerProvider.notifier).send(
-        Interaction(
+    if (fromUid == null) return const InteractionSendResult();
+    final result = await ref
+        .read(interestControllerProvider.notifier)
+        .sendWithMatch(Interaction(
             fromUid: fromUid,
             toUid: profile.uid,
             type: InteractionType.specialInterest,
             reason: reason));
-    if (sent) {
+    if (result.sent) {
       ref.read(discoveryControllerProvider.notifier).removeProfile(profile.uid);
     }
-    return sent;
+    return result;
   }
+
+  void _showMatchFeedback(BuildContext context) => showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final l = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          icon: const Icon(Icons.favorite_rounded, color: NoxColors.danger),
+          title: Text(l.matchFeedbackTitle, textAlign: TextAlign.center),
+          content: Text(l.matchFeedbackBody, textAlign: TextAlign.center),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  context.go('/matches');
+                },
+                child: Text(l.matchFeedbackViewMatches)),
+            TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(l.matchFeedbackContinue)),
+          ],
+        );
+      });
 }
 
 class _IncomingInterestCard extends StatelessWidget {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nox/core/localization/app_localizations.dart';
 import 'package:nox/core/theme/nox_theme.dart';
 import 'package:nox/features/auth/application/auth_controller.dart';
@@ -13,6 +14,9 @@ import 'package:nox/features/discovery/presentation/discovery_page.dart';
 import 'package:nox/features/interest/application/interest_controller.dart';
 import 'package:nox/features/interest/domain/interaction.dart';
 import 'package:nox/features/interest/domain/interest_repository.dart';
+import 'package:nox/features/match/application/match_controller.dart';
+import 'package:nox/features/match/domain/match.dart';
+import 'package:nox/features/match/domain/match_repository.dart';
 
 void main() {
   testWidgets('Discovery card shows its three interaction actions',
@@ -250,6 +254,65 @@ void main() {
     expect(AppLocalizations(const Locale('en')).discoveryIncomingLikes(2),
         '2 people like you.');
   });
+
+  testWidgets('shows match feedback only when a new match is created',
+      (tester) async {
+    final harness = _Harness(match: _FakeMatchRepository(createsMatch: true));
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('İlgimi Çekti'));
+    await tester.pumpAndSettle();
+    expect(find.text('Eşleştiniz! ❤️'), findsOneWidget);
+    expect(find.text('Eşleşmelerime Git'), findsOneWidget);
+  });
+
+  testWidgets('does not show feedback for pass or blocked match',
+      (tester) async {
+    final pass = _Harness();
+    await tester.pumpWidget(pass.app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Geç'));
+    await tester.pumpAndSettle();
+    expect(find.text('Eşleştiniz! ❤️'), findsNothing);
+
+    final blocked = _Harness(match: _FakeMatchRepository(blocked: true));
+    await tester.pumpWidget(blocked.app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('İlgimi Çekti'));
+    await tester.pumpAndSettle();
+    expect(find.text('Eşleştiniz! ❤️'), findsNothing);
+  });
+
+  testWidgets('shows match feedback after Special Interest', (tester) async {
+    final harness = _Harness(
+        isPremium: true, match: _FakeMatchRepository(createsMatch: true));
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+    await _openReasonSheet(tester);
+    await tester.tap(find.text('Kişiliği'));
+    await tester.pump();
+    await tester.tap(find.text('Özel İlgi Gönder'));
+    await tester.pumpAndSettle();
+    expect(find.text('Eşleştiniz! ❤️'), findsOneWidget);
+  });
+
+  testWidgets('match feedback CTA navigates to matches', (tester) async {
+    final harness = _Harness(match: _FakeMatchRepository(createsMatch: true));
+    await tester.pumpWidget(harness.routerApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('İlgimi Çekti'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Eşleşmelerime Git'));
+    await tester.pumpAndSettle();
+    expect(find.text('matches destination'), findsOneWidget);
+  });
+
+  test('match feedback localization supports Turkish and English', () {
+    expect(AppLocalizations(const Locale('tr')).matchFeedbackTitle,
+        'Eşleştiniz! ❤️');
+    expect(AppLocalizations(const Locale('en')).matchFeedbackTitle,
+        'It’s a match! ❤️');
+  });
 }
 
 Future<void> _openReasonSheet(WidgetTester tester) async {
@@ -264,7 +327,8 @@ class _Harness {
       Completer<void>? submitCompleter,
       IncomingInterestSummary summary = const IncomingInterestSummary(),
       bool summaryFails = false,
-      Completer<IncomingInterestSummary>? summaryCompleter}) {
+      Completer<IncomingInterestSummary>? summaryCompleter,
+      _FakeMatchRepository? match}) {
     final repository = _FakeInterestRepository(
         shouldFail: shouldFail,
         submitCompleter: submitCompleter,
@@ -279,6 +343,8 @@ class _Harness {
           discoveryControllerProvider
               .overrideWith(_TestDiscoveryController.new),
           interestRepositoryProvider.overrideWithValue(repository),
+          matchRepositoryProvider
+              .overrideWithValue(match ?? _FakeMatchRepository()),
           premiumStateProvider.overrideWithValue(isPremium),
         ]));
   }
@@ -301,6 +367,23 @@ class _Harness {
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: const DiscoveryPage()));
+  }
+
+  Widget routerApp() {
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const DiscoveryPage()),
+      GoRoute(
+          path: '/matches',
+          builder: (_, __) => const Scaffold(body: Text('matches destination')))
+    ]);
+    return UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+            theme: NoxTheme.dark,
+            locale: const Locale('tr'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router));
   }
 }
 
@@ -354,4 +437,21 @@ class _FakeInterestRepository implements InterestRepository {
   Future<IncomingInteractionPage> getIncomingInteractions(String uid,
           {Object? cursor, int pageSize = 10}) async =>
       const IncomingInteractionPage(items: []);
+}
+
+class _FakeMatchRepository implements MatchRepository {
+  _FakeMatchRepository({this.createsMatch = false, this.blocked = false});
+  final bool createsMatch;
+  final bool blocked;
+
+  @override
+  Future<NoxMatch?> createMatchIfNeeded(String a, String b) async =>
+      createsMatch && !blocked ? NoxMatch(userAUid: a, userBUid: b) : null;
+
+  @override
+  Future<NoxMatch?> getMatch(String a, String b) async =>
+      blocked ? const NoxMatch(userAUid: 'a', userBUid: 'b') : null;
+
+  @override
+  Future<List<NoxMatch>> getMatches(String uid) async => [];
 }

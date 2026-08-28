@@ -321,6 +321,14 @@ class AppLocalizations {
       ? 'Eşleşmeler şu anda yüklenemiyor.'
       : 'Matches cannot be loaded right now.';
   String get matchesRetry => isTurkish ? 'Tekrar Dene' : 'Try again';
+  String get matchFeedbackTitle =>
+      isTurkish ? 'Eşleştiniz! ❤️' : 'It’s a match! ❤️';
+  String get matchFeedbackBody => isTurkish
+      ? 'Artık birbirinizi keşfedebilirsiniz.'
+      : 'You can now discover each other.';
+  String get matchFeedbackViewMatches =>
+      isTurkish ? 'Eşleşmelerime Git' : 'Go to my matches';
+  String get matchFeedbackContinue => isTurkish ? 'Devam Et' : 'Continue';
   String matchesCardSemantics(String name, int? age, String? city) {
     final details = [
       name,

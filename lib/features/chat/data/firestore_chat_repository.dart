@@ -2,11 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../domain/chat_repository.dart';
 import '../domain/conversation.dart';
+import '../../match/data/firestore_match_repository.dart';
+import '../../match/domain/match.dart';
+import '../../match/domain/match_repository.dart';
 
 class FirestoreChatRepository implements ChatRepository {
-  FirestoreChatRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  FirestoreChatRepository(
+      {FirebaseFirestore? firestore, MatchRepository? match})
+      : _firestore = firestore ?? FirebaseFirestore.instance,
+        _match = match ?? FirestoreMatchRepository();
   final FirebaseFirestore _firestore;
+  final MatchRepository _match;
 
   @override
   Future<Conversation?> getConversationForMatch(
@@ -31,8 +37,18 @@ class FirestoreChatRepository implements ChatRepository {
   @override
   Future<Conversation> createConversationIfNeeded(
       String userAUid, String userBUid) async {
+    if (userAUid.isEmpty || userBUid.isEmpty || userAUid == userBUid) {
+      throw const ChatFailure('invalidConversation');
+    }
     final existing = await getConversationForMatch(userAUid, userBUid);
     if (existing != null) return existing;
+    final match = await _match.getMatch(userAUid, userBUid);
+    if (match == null) throw const ChatFailure('matchNotFound');
+    if (match.status != MatchStatus.active ||
+        !{match.userAUid, match.userBUid}.contains(userAUid) ||
+        !{match.userAUid, match.userBUid}.contains(userBUid)) {
+      throw const ChatFailure('invalidMatch');
+    }
     final users = [userAUid, userBUid]..sort();
     return Conversation(
         userAUid: users[0],

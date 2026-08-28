@@ -36,9 +36,15 @@ class Conversation {
       };
 
   factory Conversation.fromFirestore(Map<String, dynamic> data) => Conversation(
-        userAUid: data['userAUid'] as String,
-        userBUid: data['userBUid'] as String,
-        matchId: data['matchId'] as String,
+        userAUid: _required(data, 'userAUid'),
+        userBUid: _required(data, 'userBUid'),
+        matchId: _required(data, 'matchId'),
         lastMessagePreview: data['lastMessagePreview'] as String?,
       );
+}
+
+String _required(Map<String, dynamic> data, String key) {
+  final value = data[key];
+  if (value is! String || value.isEmpty) throw FormatException('invalid $key');
+  return value;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nox/features/chat/domain/chat_message.dart';
 import 'package:nox/features/chat/domain/conversation.dart';
+import 'package:nox/features/chat/domain/chat_repository.dart';
 
 void main() {
   test('conversation IDs are deterministic and reject invalid users', () {
@@ -13,6 +14,11 @@ void main() {
     final c = Conversation.fromFirestore(
         {'userAUid': 'a', 'userBUid': 'b', 'matchId': 'a_b'});
     expect(c.conversationId, 'a_b');
+  });
+  test('invalid conversation documents fail safely', () {
+    expect(() => Conversation.fromFirestore({'userAUid': 'a'}),
+        throwsFormatException);
+    expect(const ChatFailure('loadFailed').code, 'loadFailed');
   });
   test('chat message validates fields and maps', () {
     final m = ChatMessage(

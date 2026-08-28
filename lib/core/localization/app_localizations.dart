@@ -307,6 +307,20 @@ class AppLocalizations {
 
   String get discoveryTitle =>
       isTurkish ? 'Bugün kimle tanışacaksın?' : 'Meet someone new.';
+  String get matchesTitle => isTurkish ? 'Eşleşmeler' : 'Matches';
+  String get matchesLoading =>
+      isTurkish ? 'Eşleşmeler yükleniyor.' : 'Loading matches.';
+  String get matchesEmptyTitle =>
+      isTurkish ? 'Henüz bir eşleşmen yok.' : 'You do not have a match yet.';
+  String get matchesEmptyBody => isTurkish
+      ? 'Doğru kişiyle karşılaşmak için keşfetmeye devam et.'
+      : 'Keep discovering to meet the right person.';
+  String get matchesContinueDiscovering =>
+      isTurkish ? 'Keşfetmeye Devam Et' : 'Keep discovering';
+  String get matchesUnavailable => isTurkish
+      ? 'Eşleşmeler şu anda yüklenemiyor.'
+      : 'Matches cannot be loaded right now.';
+  String get matchesRetry => isTurkish ? 'Tekrar Dene' : 'Try again';
   String get discoveryEmpty => isTurkish
       ? 'Şimdilik burada sessizlik var.'
       : 'It is quiet here for now.';

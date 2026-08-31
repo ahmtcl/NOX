@@ -5,14 +5,20 @@ import '../domain/conversation.dart';
 import '../../match/data/firestore_match_repository.dart';
 import '../../match/domain/match.dart';
 import '../../match/domain/match_repository.dart';
+import '../../safety/data/firestore_safety_repository.dart';
+import '../../safety/domain/safety_repository.dart';
 
 class FirestoreChatRepository implements ChatRepository {
   FirestoreChatRepository(
-      {FirebaseFirestore? firestore, MatchRepository? match})
+      {FirebaseFirestore? firestore,
+      MatchRepository? match,
+      SafetyRepository? safety})
       : _firestore = firestore ?? FirebaseFirestore.instance,
-        _match = match ?? FirestoreMatchRepository();
+        _match = match ?? FirestoreMatchRepository(),
+        _safety = safety ?? FirestoreSafetyRepository();
   final FirebaseFirestore _firestore;
   final MatchRepository _match;
+  final SafetyRepository _safety;
 
   @override
   Future<Conversation?> getConversationForMatch(
@@ -42,6 +48,10 @@ class FirestoreChatRepository implements ChatRepository {
     }
     final existing = await getConversationForMatch(userAUid, userBUid);
     if (existing != null) return existing;
+    if (await _safety.isBlocked(userAUid, userBUid) ||
+        await _safety.isBlocked(userBUid, userAUid)) {
+      throw const ChatFailure('blocked');
+    }
     final match = await _match.getMatch(userAUid, userBUid);
     if (match == null) throw const ChatFailure('matchNotFound');
     if (match.status != MatchStatus.active ||

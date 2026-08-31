@@ -16,6 +16,7 @@ void main() {
   late _MockDocumentReference conversation;
   late _MockCollectionReference messages;
   late _MockDocumentReference message;
+  late _MockQuery messageQuery;
   late _MockDocumentSnapshot snapshot;
   late _MockDocumentSnapshot transactionSnapshot;
   late _MockTransaction transaction;
@@ -24,6 +25,8 @@ void main() {
   late FirestoreChatRepository repository;
   var transactionExists = false;
   var writes = 0;
+  var queryCalls = 0;
+  var queryResults = <_MockQuerySnapshot>[];
 
   setUp(() {
     firestore = _MockFirebaseFirestore();
@@ -31,6 +34,7 @@ void main() {
     conversation = _MockDocumentReference();
     messages = _MockCollectionReference();
     message = _MockDocumentReference();
+    messageQuery = _MockQuery();
     snapshot = _MockDocumentSnapshot();
     transactionSnapshot = _MockDocumentSnapshot();
     transaction = _MockTransaction();
@@ -49,6 +53,13 @@ void main() {
     when(() => messages.doc()).thenReturn(message);
     when(() => message.id).thenReturn('message-id');
     when(() => message.set(any())).thenAnswer((_) async {});
+    when(() => messages.orderBy('createdAt', descending: true))
+        .thenReturn(messageQuery);
+    when(() => messageQuery.limit(any())).thenReturn(messageQuery);
+    when(() => messageQuery.startAfterDocument(any())).thenReturn(messageQuery);
+    when(() => messageQuery.get()).thenAnswer((_) async {
+      return queryResults[queryCalls++];
+    });
     when(() => snapshot.exists).thenReturn(false);
     when(() => firestore.runTransaction<Conversation>(any()))
         .thenAnswer((invocation) async {
@@ -80,6 +91,127 @@ void main() {
       'matchId': 'a_b',
     });
   }
+
+  _MockQueryDocumentSnapshot messageDocument(String id, String text) {
+    final document = _MockQueryDocumentSnapshot();
+    when(() => document.data()).thenReturn({
+      'messageId': id,
+      'conversationId': 'a_b',
+      'senderUid': 'a',
+      'text': text,
+    });
+    return document;
+  }
+
+  _MockQuerySnapshot messagePage(List<_MockQueryDocumentSnapshot> documents) {
+    final page = _MockQuerySnapshot();
+    when(() => page.docs).thenReturn(documents);
+    return page;
+  }
+
+  test('reads the first message page for a participant', () async {
+    makeConversationAvailable();
+    queryResults = [messagePage([messageDocument('new', 'newest')])];
+
+    final page =
+        await repository.getMessages('a_b', currentUserUid: 'a');
+
+    expect(page.messages.single.text, 'newest');
+    expect(page.hasMore, isFalse);
+  });
+
+  test('reads from the conversation messages subcollection path', () async {
+    makeConversationAvailable();
+    queryResults = [messagePage([])];
+
+    await repository.getMessages('a_b', currentUserUid: 'a');
+
+    verify(() => conversation.collection('messages')).called(1);
+  });
+
+  test('applies the requested message page size', () async {
+    makeConversationAvailable();
+    queryResults = [messagePage([])];
+
+    await repository.getMessages('a_b', currentUserUid: 'a', pageSize: 2);
+
+    verify(() => messageQuery.limit(2)).called(1);
+  });
+
+  test('reads a second message page with its cursor', () async {
+    makeConversationAvailable();
+    final firstDocument = messageDocument('first', 'first');
+    final secondDocument = messageDocument('second', 'second');
+    queryResults = [messagePage([firstDocument]), messagePage([secondDocument])];
+
+    final first =
+        await repository.getMessages('a_b', currentUserUid: 'a', pageSize: 1);
+    final second = await repository.getMessages('a_b',
+        currentUserUid: 'a', pageSize: 1, cursor: first.cursor);
+
+    expect(second.messages.single.text, 'second');
+    verify(() => messageQuery.startAfterDocument(firstDocument)).called(1);
+  });
+
+  test('preserves Firestore newest-first message order', () async {
+    makeConversationAvailable();
+    queryResults = [messagePage([
+      messageDocument('new', 'newest'),
+      messageDocument('old', 'oldest'),
+    ])];
+
+    final page =
+        await repository.getMessages('a_b', currentUserUid: 'a');
+
+    expect(page.messages.map((message) => message.text), ['newest', 'oldest']);
+  });
+
+  test('rejects message reads by an outsider', () async {
+    makeConversationAvailable();
+
+    await expectLater(
+      repository.getMessages('a_b', currentUserUid: 'outside'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'notParticipant')),
+    );
+
+    verifyNever(() => messageQuery.get());
+  });
+
+  test('rejects message reads for a missing conversation', () async {
+    await expectLater(
+      repository.getMessages('a_b', currentUserUid: 'a'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'conversationNotFound')),
+    );
+
+    verifyNever(() => messageQuery.get());
+  });
+
+  test('maps malformed messages to a safe failure', () async {
+    makeConversationAvailable();
+    final malformed = _MockQueryDocumentSnapshot();
+    when(() => malformed.data()).thenReturn({'messageId': 'message'});
+    queryResults = [messagePage([malformed])];
+
+    await expectLater(
+      repository.getMessages('a_b', currentUserUid: 'a'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'invalidMessage')),
+    );
+  });
+
+  test('maps Firebase message reads to ChatFailure', () async {
+    makeConversationAvailable();
+    when(() => messageQuery.get()).thenThrow(
+        FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'));
+
+    await expectLater(
+      repository.getMessages('a_b', currentUserUid: 'a'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'networkError')),
+    );
+  });
 
   test('writes a message from a valid participant', () async {
     makeConversationAvailable();
@@ -252,6 +384,14 @@ class _MockDocumentSnapshot extends Mock
     implements DocumentSnapshot<Map<String, dynamic>> {}
 
 class _MockTransaction extends Mock implements Transaction {}
+
+class _MockQuery extends Mock implements Query<Map<String, dynamic>> {}
+
+class _MockQuerySnapshot extends Mock
+    implements QuerySnapshot<Map<String, dynamic>> {}
+
+class _MockQueryDocumentSnapshot extends Mock
+    implements QueryDocumentSnapshot<Map<String, dynamic>> {}
 
 class _FakeMatchRepository implements MatchRepository {
   NoxMatch? value = const NoxMatch(userAUid: 'a', userBUid: 'b');

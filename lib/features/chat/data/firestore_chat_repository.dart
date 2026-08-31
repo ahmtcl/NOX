@@ -124,6 +124,61 @@ class FirestoreChatRepository implements ChatRepository {
     }
   }
 
+  @override
+  Future<ChatMessagePage> getMessages(String conversationId,
+      {required String currentUserUid,
+      Object? cursor,
+      int pageSize = 30}) async {
+    if (conversationId.isEmpty || currentUserUid.isEmpty) {
+      throw const ChatFailure('invalidConversation');
+    }
+    if (pageSize <= 0 || pageSize > 100) {
+      throw const ChatFailure('invalidPageSize');
+    }
+    if (cursor != null && cursor is! DocumentSnapshot<Map<String, dynamic>>) {
+      throw const ChatFailure('invalidCursor');
+    }
+    final conversationRef =
+        _firestore.collection('conversations').doc(conversationId);
+    try {
+      final snapshot = await conversationRef.get();
+      if (!snapshot.exists) throw const ChatFailure('conversationNotFound');
+      final conversation = _conversationFrom(snapshot.data()!);
+      if (conversation.conversationId != conversationId ||
+          conversation.matchId != conversationId) {
+        throw const ChatFailure('invalidConversation');
+      }
+      if (currentUserUid != conversation.userAUid &&
+          currentUserUid != conversation.userBUid) {
+        throw const ChatFailure('notParticipant');
+      }
+      Query<Map<String, dynamic>> query = conversationRef
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .limit(pageSize);
+      if (cursor != null) query = query.startAfterDocument(cursor);
+      final result = await query.get();
+      final messages = <ChatMessage>[];
+      for (final document in result.docs) {
+        try {
+          messages.add(ChatMessage.fromFirestore(document.data()));
+        } on ArgumentError {
+          throw const ChatFailure('invalidMessage');
+        } on FormatException {
+          throw const ChatFailure('invalidMessage');
+        } on TypeError {
+          throw const ChatFailure('invalidMessage');
+        }
+      }
+      return ChatMessagePage(
+          messages: messages,
+          cursor: result.docs.length == pageSize ? result.docs.last : null);
+    } on FirebaseException catch (e) {
+      throw ChatFailure(
+          e.code == 'unavailable' ? 'networkError' : 'loadFailed');
+    }
+  }
+
   ChatMessage _messageFor(
       String messageId, String conversationId, String senderUid, String text) {
     try {

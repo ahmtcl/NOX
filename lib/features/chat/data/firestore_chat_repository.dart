@@ -135,7 +135,7 @@ class FirestoreChatRepository implements ChatRepository {
     if (pageSize <= 0 || pageSize > 100) {
       throw const ChatFailure('invalidPageSize');
     }
-    if (cursor != null && cursor is! DocumentSnapshot<Map<String, dynamic>>) {
+    if (cursor != null && cursor is! DocumentSnapshot<Object?>) {
       throw const ChatFailure('invalidCursor');
     }
     final conversationRef =

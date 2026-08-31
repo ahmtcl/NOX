@@ -192,6 +192,16 @@ void main() {
     verify(() => messageQuery.limit(2)).called(1);
   });
 
+  test('rejects a cursor that is not a Firestore document snapshot', () async {
+    await expectLater(
+      repository.getMessages('a_b', currentUserUid: 'a', cursor: Object()),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'invalidCursor')),
+    );
+
+    verifyNever(() => conversation.get());
+  });
+
   test('reads a second message page with its cursor', () async {
     makeConversationAvailable();
     final firstDocument = messageDocument('first', 'first');

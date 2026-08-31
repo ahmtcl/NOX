@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/nox_theme.dart';
 import '../../auth/application/auth_controller.dart';
+import '../../chat/application/chat_controller.dart';
+import '../../chat/domain/chat_repository.dart';
+import '../../chat/presentation/chat_page.dart';
 import '../../discovery/application/discovery_controller.dart';
 import '../../discovery/domain/public_profile.dart';
 import '../../discovery/presentation/public_profile_detail_page.dart';
@@ -75,9 +78,17 @@ class _Profiles extends ConsumerWidget {
               if (byUid[_otherUserId(match, currentUid)] case final profile?)
                 profile,
         ];
+        final matchesByOtherUid = {
+          for (final match in matches)
+            if (currentUid != null) _otherUserId(match, currentUid): match,
+        };
         return orderedProfiles.isEmpty
             ? const _EmptyMessage()
-            : _MatchList(profiles: orderedProfiles);
+            : _MatchList(
+                profiles: orderedProfiles,
+                matchesByOtherUid: matchesByOtherUid,
+                currentUid: currentUid!,
+              );
       },
     );
   }
@@ -113,24 +124,40 @@ class _Loading extends StatelessWidget {
 }
 
 class _MatchList extends StatelessWidget {
-  const _MatchList({required this.profiles});
+  const _MatchList({
+    required this.profiles,
+    required this.matchesByOtherUid,
+    required this.currentUid,
+  });
   final List<PublicProfile> profiles;
+  final Map<String, NoxMatch> matchesByOtherUid;
+  final String currentUid;
 
   @override
   Widget build(BuildContext context) => ListView.separated(
         padding: const EdgeInsets.all(20),
         itemCount: profiles.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, index) => _MatchCard(profile: profiles[index]),
+        itemBuilder: (_, index) => _MatchCard(
+          profile: profiles[index],
+          match: matchesByOtherUid[profiles[index].uid]!,
+          currentUid: currentUid,
+        ),
       );
 }
 
-class _MatchCard extends StatelessWidget {
-  const _MatchCard({required this.profile});
+class _MatchCard extends ConsumerWidget {
+  const _MatchCard({
+    required this.profile,
+    required this.match,
+    required this.currentUid,
+  });
   final PublicProfile profile;
+  final NoxMatch match;
+  final String currentUid;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final name = profile.displayName ?? l.discoveryAnonymous;
     final details = [
@@ -165,6 +192,30 @@ class _MatchCard extends StatelessWidget {
                             style: const TextStyle(
                                 color: NoxColors.textSecondary)),
                       ],
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () async {
+                          await ref
+                              .read(chatRepositoryProvider)
+                              .createConversationIfNeeded(
+                                match.userAUid,
+                                match.userBUid,
+                              );
+                          if (!context.mounted) return;
+                          context.push(
+                            '/chat',
+                            extra: ChatRouteArgs(
+                              session: ChatSession(
+                                userAUid: match.userAUid,
+                                userBUid: match.userBUid,
+                                currentUserUid: currentUid,
+                              ),
+                              otherUserName: name,
+                            ),
+                          );
+                        },
+                        child: const Text('Sohbet aç'),
+                      ),
                     ],
                   ),
                 ),

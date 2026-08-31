@@ -14,6 +14,7 @@ import '../../features/discovery/presentation/incoming_interests_page.dart';
 import '../../features/match/presentation/match_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/verify_email_page.dart';
+import '../../features/chat/presentation/chat_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/splash/presentation/splash_page.dart';
 
@@ -39,7 +40,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isProtected = location == '/profile/setup' ||
           location == '/home' ||
           location == '/discovery/interests' ||
-          location == '/matches';
+          location == '/matches' ||
+          location == '/chat';
       final profileCompleted =
           ref.read(profileCompletionProvider).valueOrNull == true;
       if (auth.status == AuthStatus.loading ||
@@ -82,6 +84,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/discovery/interests',
           builder: (_, __) => const IncomingInterestsPage()),
       GoRoute(path: '/matches', builder: (_, __) => const MatchPage()),
+      GoRoute(
+        path: '/chat',
+        redirect: (_, state) =>
+            state.extra is ChatRouteArgs ? null : '/matches',
+        builder: (_, state) => ChatPage(args: state.extra! as ChatRouteArgs),
+      ),
       GoRoute(
           path: '/legal/privacy',
           builder: (context, state) =>

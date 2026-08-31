@@ -9,8 +9,8 @@ import '../domain/conversation.dart';
 
 final chatRepositoryProvider =
     Provider<ChatRepository>((ref) => FirestoreChatRepository());
-final chatControllerProvider = NotifierProvider.family<ChatController,
-    ChatState, ChatSession>(ChatController.new);
+final chatControllerProvider = NotifierProvider.autoDispose
+    .family<ChatController, ChatState, ChatSession>(ChatController.new);
 
 class ChatSession {
   const ChatSession(
@@ -33,7 +33,7 @@ class ChatState {
           error: clearError ? null : error ?? this.error);
 }
 
-class ChatController extends FamilyNotifier<ChatState, ChatSession> {
+class ChatController extends AutoDisposeFamilyNotifier<ChatState, ChatSession> {
   StreamSubscription<List<ChatMessage>>? _subscription;
   Object? _cursor;
   late ChatSession _session;
@@ -69,6 +69,14 @@ class ChatController extends FamilyNotifier<ChatState, ChatSession> {
     try { await _repository.sendMessage(conversation.conversationId, _session.currentUserUid, text); }
     catch (error) { state = state.copyWith(error: error); }
     finally { state = state.copyWith(isSending: false); }
+  }
+
+  Future<void> retry() async {
+    await _subscription?.cancel();
+    _subscription = null;
+    _cursor = null;
+    state = const ChatState();
+    await _load();
   }
 
   Future<void> loadMore() async {

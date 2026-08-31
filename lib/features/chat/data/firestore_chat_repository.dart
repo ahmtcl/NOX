@@ -135,8 +135,12 @@ class FirestoreChatRepository implements ChatRepository {
     if (pageSize <= 0 || pageSize > 100) {
       throw const ChatFailure('invalidPageSize');
     }
-    if (cursor != null && cursor is! DocumentSnapshot<Object?>) {
-      throw const ChatFailure('invalidCursor');
+    DocumentSnapshot<Object?>? firestoreCursor;
+    if (cursor != null) {
+      if (cursor is! DocumentSnapshot<Object?>) {
+        throw const ChatFailure('invalidCursor');
+      }
+      firestoreCursor = cursor;
     }
     final conversationRef =
         _firestore.collection('conversations').doc(conversationId);
@@ -156,7 +160,9 @@ class FirestoreChatRepository implements ChatRepository {
           .collection('messages')
           .orderBy('createdAt', descending: true)
           .limit(pageSize);
-      if (cursor != null) query = query.startAfterDocument(cursor);
+      if (firestoreCursor != null) {
+        query = query.startAfterDocument(firestoreCursor);
+      }
       final result = await query.get();
       final messages = <ChatMessage>[];
       for (final document in result.docs) {

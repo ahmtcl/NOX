@@ -24,6 +24,13 @@ class AppLocalizations {
   String get tagline => isTurkish
       ? 'Önce konuş. Bağ kur. Sonra gör.'
       : 'Talk first. Connect. Then reveal.';
+  String get splashOrbit => 'DISCOVER • CONNECT • MATCH';
+  String get splashDescriptor => 'SOCIAL DISCOVERY';
+  String get splashEstablished => 'EST. 2026';
+  String get authEditorialFirst =>
+      isTurkish ? 'Tanışmanın' : 'A new way';
+  String get authEditorialSecond =>
+      isTurkish ? 'yeni hali.' : 'to connect.';
   String get skip => isTurkish ? 'Atla' : 'Skip';
   String get back => isTurkish ? 'Geri' : 'Back';
   String get next => isTurkish ? 'Devam et' : 'Continue';

@@ -14,6 +14,38 @@ abstract final class NoxColors {
   static const danger = Color(0xFFFF6F91);
 }
 
+/// The light editorial palette used by the opening and authentication flows.
+/// Legacy feature surfaces continue using [NoxColors] until their own redesigns.
+abstract final class NoxEditorialColors {
+  static const background = Color(0xFFF4F8FF);
+  static const backgroundSecondary = Color(0xFFE7F0FF);
+  static const stripeLight = Color(0xFFEDF5FF);
+  static const stripeBlue = Color(0xFFD5E6FB);
+  static const navy = Color(0xFF111D4A);
+  static const navySoft = Color(0xFF24345F);
+  static const primaryBlue = Color(0xFF397BFF);
+  static const primaryBlueLight = Color(0xFF82B5FF);
+  static const surface = Colors.white;
+  static const textSecondary = Color(0xFF65749A);
+  static const border = Color(0x99D5E6FB);
+}
+
+abstract final class NoxSpacing {
+  static const page = 24.0;
+  static const section = 20.0;
+  static const field = 14.0;
+}
+
+abstract final class NoxRadius {
+  static const field = BorderRadius.all(Radius.circular(16));
+  static const surface = BorderRadius.all(Radius.circular(24));
+}
+
+abstract final class NoxTypography {
+  static const editorial = 'serif';
+  static const ui = 'sans-serif';
+}
+
 abstract final class NoxGradients {
   static const atmosphere = LinearGradient(
     begin: Alignment.topLeft,

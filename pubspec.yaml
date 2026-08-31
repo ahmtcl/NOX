@@ -34,3 +34,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/branding/nox_splash_reference.png
+    - assets/branding/nox_brand_overlay.png

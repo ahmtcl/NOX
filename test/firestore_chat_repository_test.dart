@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:nox/features/chat/data/firestore_chat_repository.dart';
+import 'package:nox/features/chat/domain/chat_message.dart';
 import 'package:nox/features/chat/domain/chat_repository.dart';
 import 'package:nox/features/chat/domain/conversation.dart';
 import 'package:nox/features/match/domain/match.dart';
@@ -13,6 +14,8 @@ void main() {
   late _MockFirebaseFirestore firestore;
   late _MockCollectionReference conversations;
   late _MockDocumentReference conversation;
+  late _MockCollectionReference messages;
+  late _MockDocumentReference message;
   late _MockDocumentSnapshot snapshot;
   late _MockDocumentSnapshot transactionSnapshot;
   late _MockTransaction transaction;
@@ -26,6 +29,8 @@ void main() {
     firestore = _MockFirebaseFirestore();
     conversations = _MockCollectionReference();
     conversation = _MockDocumentReference();
+    messages = _MockCollectionReference();
+    message = _MockDocumentReference();
     snapshot = _MockDocumentSnapshot();
     transactionSnapshot = _MockDocumentSnapshot();
     transaction = _MockTransaction();
@@ -40,6 +45,10 @@ void main() {
     when(() => firestore.collection('conversations')).thenReturn(conversations);
     when(() => conversations.doc('a_b')).thenReturn(conversation);
     when(() => conversation.get()).thenAnswer((_) async => snapshot);
+    when(() => conversation.collection('messages')).thenReturn(messages);
+    when(() => messages.doc()).thenReturn(message);
+    when(() => message.id).thenReturn('message-id');
+    when(() => message.set(any())).thenAnswer((_) async {});
     when(() => snapshot.exists).thenReturn(false);
     when(() => firestore.runTransaction<Conversation>(any()))
         .thenAnswer((invocation) async {
@@ -61,6 +70,89 @@ void main() {
       transactionExists = true;
       writes++;
     });
+  });
+
+  void makeConversationAvailable() {
+    when(() => snapshot.exists).thenReturn(true);
+    when(() => snapshot.data()).thenReturn({
+      'userAUid': 'a',
+      'userBUid': 'b',
+      'matchId': 'a_b',
+    });
+  }
+
+  test('writes a message from a valid participant', () async {
+    makeConversationAvailable();
+
+    final result = await repository.sendMessage('a_b', 'a', ' hello ');
+
+    expect(result, isA<ChatMessage>());
+    expect(result.text, 'hello');
+    verify(() => message.set(any())).called(1);
+  });
+
+  test('uses the conversation messages subcollection path', () async {
+    makeConversationAvailable();
+
+    await repository.sendMessage('a_b', 'a', 'hello');
+
+    verify(() => conversation.collection('messages')).called(1);
+    verify(() => messages.doc()).called(1);
+    verify(() => message.set(any())).called(1);
+  });
+
+  test('does not write a message from an outsider', () async {
+    makeConversationAvailable();
+
+    await expectLater(
+      repository.sendMessage('a_b', 'outside', 'hello'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'notParticipant')),
+    );
+
+    verifyNever(() => message.set(any()));
+  });
+
+  test('rejects a message for a missing conversation', () async {
+    await expectLater(
+      repository.sendMessage('a_b', 'a', 'hello'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'conversationNotFound')),
+    );
+
+    verifyNever(() => message.set(any()));
+  });
+
+  test('rejects an empty message', () async {
+    await expectLater(
+      repository.sendMessage('a_b', 'a', '   '),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'invalidMessage')),
+    );
+
+    verifyNever(() => message.set(any()));
+  });
+
+  test('rejects a message longer than 1000 characters', () async {
+    await expectLater(
+      repository.sendMessage('a_b', 'a', 'x' * 1001),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'invalidMessage')),
+    );
+
+    verifyNever(() => message.set(any()));
+  });
+
+  test('maps a Firebase write failure to ChatFailure', () async {
+    makeConversationAvailable();
+    when(() => message.set(any())).thenThrow(
+        FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'));
+
+    await expectLater(
+      repository.sendMessage('a_b', 'a', 'hello'),
+      throwsA(isA<ChatFailure>()
+          .having((failure) => failure.code, 'code', 'networkError')),
+    );
   });
 
   test('writes a new conversation in a transaction', () async {

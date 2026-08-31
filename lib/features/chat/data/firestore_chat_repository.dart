@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../domain/chat_message.dart';
 import '../domain/chat_repository.dart';
 import '../domain/conversation.dart';
 import '../../match/data/firestore_match_repository.dart';
@@ -87,6 +88,62 @@ class FirestoreChatRepository implements ChatRepository {
     } on FirebaseException catch (e) {
       throw ChatFailure(
           e.code == 'unavailable' ? 'networkError' : 'saveFailed');
+    }
+  }
+
+  @override
+  Future<ChatMessage> sendMessage(
+      String conversationId, String senderUid, String text) async {
+    if (conversationId.isEmpty) throw const ChatFailure('invalidMessage');
+    final conversationRef =
+        _firestore.collection('conversations').doc(conversationId);
+    final messageRef = conversationRef.collection('messages').doc();
+    final message = _messageFor(
+        messageRef.id, conversationId, senderUid, text.trim());
+    try {
+      final snapshot = await conversationRef.get();
+      if (!snapshot.exists) throw const ChatFailure('conversationNotFound');
+      final conversation = _conversationFrom(snapshot.data()!);
+      if (conversation.conversationId != conversationId ||
+          conversation.matchId != conversationId) {
+        throw const ChatFailure('invalidConversation');
+      }
+      if (senderUid != conversation.userAUid &&
+          senderUid != conversation.userBUid) {
+        throw const ChatFailure('notParticipant');
+      }
+      await messageRef.set({
+        ...message.toFirestore(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return message;
+    } on FirebaseException catch (e) {
+      throw ChatFailure(
+          e.code == 'unavailable' ? 'networkError' : 'saveFailed');
+    }
+  }
+
+  ChatMessage _messageFor(
+      String messageId, String conversationId, String senderUid, String text) {
+    try {
+      return ChatMessage(
+          messageId: messageId,
+          conversationId: conversationId,
+          senderUid: senderUid,
+          text: text);
+    } on ArgumentError {
+      throw const ChatFailure('invalidMessage');
+    }
+  }
+
+  Conversation _conversationFrom(Map<String, dynamic> data) {
+    try {
+      return Conversation.fromFirestore(data);
+    } on FormatException {
+      throw const ChatFailure('invalidConversation');
+    } on ArgumentError {
+      throw const ChatFailure('invalidConversation');
     }
   }
 }

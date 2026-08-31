@@ -60,9 +60,33 @@ class FirestoreChatRepository implements ChatRepository {
       throw const ChatFailure('invalidMatch');
     }
     final users = [userAUid, userBUid]..sort();
-    return Conversation(
+    final conversation = Conversation(
         userAUid: users[0],
         userBUid: users[1],
         matchId: Conversation.idFor(userAUid, userBUid));
+    final ref = _firestore.collection('conversations').doc(conversation.matchId);
+    try {
+      return await _firestore.runTransaction((transaction) async {
+        final existing = await transaction.get(ref);
+        if (existing.exists) {
+          try {
+            return Conversation.fromFirestore(existing.data()!);
+          } on FormatException {
+            throw const ChatFailure('invalidConversation');
+          } on ArgumentError {
+            throw const ChatFailure('invalidConversation');
+          }
+        }
+        transaction.set(ref, {
+          ...conversation.toFirestore(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return conversation;
+      });
+    } on FirebaseException catch (e) {
+      throw ChatFailure(
+          e.code == 'unavailable' ? 'networkError' : 'saveFailed');
+    }
   }
 }

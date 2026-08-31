@@ -14,15 +14,21 @@ void main() {
   late _MockCollectionReference conversations;
   late _MockDocumentReference conversation;
   late _MockDocumentSnapshot snapshot;
+  late _MockDocumentSnapshot transactionSnapshot;
+  late _MockTransaction transaction;
   late _FakeMatchRepository match;
   late _FakeSafetyRepository safety;
   late FirestoreChatRepository repository;
+  var transactionExists = false;
+  var writes = 0;
 
   setUp(() {
     firestore = _MockFirebaseFirestore();
     conversations = _MockCollectionReference();
     conversation = _MockDocumentReference();
     snapshot = _MockDocumentSnapshot();
+    transactionSnapshot = _MockDocumentSnapshot();
+    transaction = _MockTransaction();
     match = _FakeMatchRepository();
     safety = _FakeSafetyRepository();
     repository = FirestoreChatRepository(
@@ -35,6 +41,53 @@ void main() {
     when(() => conversations.doc('a_b')).thenReturn(conversation);
     when(() => conversation.get()).thenAnswer((_) async => snapshot);
     when(() => snapshot.exists).thenReturn(false);
+    when(() => firestore.runTransaction<Conversation>(any()))
+        .thenAnswer((invocation) async {
+      final handler = invocation.positionalArguments.single
+          as Future<Conversation> Function(Transaction);
+      return handler(transaction);
+    });
+    when(() => transaction.get(conversation))
+        .thenAnswer((_) async => transactionSnapshot);
+    when(() => transactionSnapshot.exists).thenAnswer((_) => transactionExists);
+    when(() => transactionSnapshot.data()).thenAnswer((_) => transactionExists
+        ? {
+            'userAUid': 'a',
+            'userBUid': 'b',
+            'matchId': 'a_b',
+          }
+        : null);
+    when(() => transaction.set(conversation, any())).thenAnswer((_) {
+      transactionExists = true;
+      writes++;
+    });
+  });
+
+  test('writes a new conversation in a transaction', () async {
+    final result = await repository.createConversationIfNeeded('a', 'b');
+
+    expect(result.conversationId, 'a_b');
+    expect(writes, 1);
+    verify(() => transaction.set(conversation, any())).called(1);
+  });
+
+  test('returns the conversation found during the transaction', () async {
+    transactionExists = true;
+
+    final result = await repository.createConversationIfNeeded('a', 'b');
+
+    expect(result.conversationId, 'a_b');
+    expect(writes, 0);
+    verifyNever(() => transaction.set(conversation, any()));
+  });
+
+  test('uses one deterministic conversation when created twice', () async {
+    final first = await repository.createConversationIfNeeded('a', 'b');
+    final second = await repository.createConversationIfNeeded('b', 'a');
+
+    expect(first.conversationId, 'a_b');
+    expect(second.conversationId, 'a_b');
+    expect(writes, 1);
   });
 
   test('rejects a conversation when A has blocked B', () async {
@@ -48,6 +101,7 @@ void main() {
 
     expect(safety.checked, ['a_b']);
     expect(match.calls, 0);
+    verifyNever(() => firestore.runTransaction<Conversation>(any()));
   });
 
   test('rejects a conversation when B has blocked A', () async {
@@ -61,6 +115,7 @@ void main() {
 
     expect(safety.checked, ['a_b', 'b_a']);
     expect(match.calls, 0);
+    verifyNever(() => firestore.runTransaction<Conversation>(any()));
   });
 
   test('continues match validation when neither user is blocked', () async {
@@ -74,6 +129,7 @@ void main() {
 
     expect(safety.checked, ['a_b', 'b_a']);
     expect(match.calls, 1);
+    verifyNever(() => firestore.runTransaction<Conversation>(any()));
   });
 
   test('does not check blocks when the conversation already exists', () async {
@@ -102,6 +158,8 @@ class _MockDocumentReference extends Mock
 
 class _MockDocumentSnapshot extends Mock
     implements DocumentSnapshot<Map<String, dynamic>> {}
+
+class _MockTransaction extends Mock implements Transaction {}
 
 class _FakeMatchRepository implements MatchRepository {
   NoxMatch? value = const NoxMatch(userAUid: 'a', userBUid: 'b');

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -27,6 +29,7 @@ void main() {
   var writes = 0;
   var queryCalls = 0;
   var queryResults = <_MockQuerySnapshot>[];
+  late StreamController<_MockQuerySnapshot> streamController;
 
   setUp(() {
     firestore = _MockFirebaseFirestore();
@@ -35,6 +38,7 @@ void main() {
     messages = _MockCollectionReference();
     message = _MockDocumentReference();
     messageQuery = _MockQuery();
+    streamController = StreamController<_MockQuerySnapshot>();
     snapshot = _MockDocumentSnapshot();
     transactionSnapshot = _MockDocumentSnapshot();
     transaction = _MockTransaction();
@@ -60,6 +64,7 @@ void main() {
     when(() => messageQuery.get()).thenAnswer((_) async {
       return queryResults[queryCalls++];
     });
+    when(() => messageQuery.snapshots()).thenAnswer((_) => streamController.stream);
     when(() => snapshot.exists).thenReturn(false);
     when(() => firestore.runTransaction<Conversation>(any()))
         .thenAnswer((invocation) async {
@@ -82,6 +87,8 @@ void main() {
       writes++;
     });
   });
+
+  tearDown(() => streamController.close());
 
   void makeConversationAvailable() {
     when(() => snapshot.exists).thenReturn(true);
@@ -118,6 +125,53 @@ void main() {
 
     expect(page.messages.single.text, 'newest');
     expect(page.hasMore, isFalse);
+  });
+
+  test('streams messages for a participant with the realtime query', () async {
+    makeConversationAvailable();
+    final watch = repository.watchMessages('a_b', 'a');
+    final next = watch.first;
+    streamController.add(messagePage([messageDocument('new', 'newest')]));
+
+    expect((await next).single.text, 'newest');
+    verify(() => conversation.collection('messages')).called(1);
+    verify(() => messages.orderBy('createdAt', descending: true)).called(1);
+    verify(() => messageQuery.limit(30)).called(1);
+  });
+
+  test('rejects realtime streams for outsiders', () async {
+    makeConversationAvailable();
+
+    await expectLater(repository.watchMessages('a_b', 'outside'),
+        emitsError(isA<ChatFailure>().having((f) => f.code, 'code', 'notParticipant')));
+  });
+
+  test('rejects realtime streams for missing conversations', () async {
+    await expectLater(
+        repository.watchMessages('a_b', 'a'),
+        emitsError(isA<ChatFailure>()
+            .having((f) => f.code, 'code', 'conversationNotFound')));
+  });
+
+  test('maps malformed realtime messages to ChatFailure', () async {
+    makeConversationAvailable();
+    final malformed = _MockQueryDocumentSnapshot();
+    when(() => malformed.data()).thenReturn({'messageId': 'bad'});
+    final watch = repository.watchMessages('a_b', 'a');
+    final error = expectLater(watch,
+        emitsError(isA<ChatFailure>().having((f) => f.code, 'code', 'invalidMessage')));
+    streamController.add(messagePage([malformed]));
+    await error;
+  });
+
+  test('maps Firebase realtime errors to ChatFailure', () async {
+    makeConversationAvailable();
+    final watch = repository.watchMessages('a_b', 'a');
+    final error = expectLater(watch,
+        emitsError(isA<ChatFailure>().having((f) => f.code, 'code', 'networkError')));
+    streamController.addError(
+        FirebaseException(plugin: 'cloud_firestore', code: 'unavailable'));
+    await error;
   });
 
   test('reads from the conversation messages subcollection path', () async {

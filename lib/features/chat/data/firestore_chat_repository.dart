@@ -179,6 +179,51 @@ class FirestoreChatRepository implements ChatRepository {
     }
   }
 
+  @override
+  Stream<List<ChatMessage>> watchMessages(
+      String conversationId, String currentUserUid) async* {
+    if (conversationId.isEmpty || currentUserUid.isEmpty) {
+      throw const ChatFailure('invalidConversation');
+    }
+    final conversationRef =
+        _firestore.collection('conversations').doc(conversationId);
+    try {
+      final snapshot = await conversationRef.get();
+      if (!snapshot.exists) throw const ChatFailure('conversationNotFound');
+      final conversation = _conversationFrom(snapshot.data()!);
+      if (conversation.conversationId != conversationId ||
+          conversation.matchId != conversationId) {
+        throw const ChatFailure('invalidConversation');
+      }
+      if (currentUserUid != conversation.userAUid &&
+          currentUserUid != conversation.userBUid) {
+        throw const ChatFailure('notParticipant');
+      }
+      final query = conversationRef
+          .collection('messages')
+          .orderBy('createdAt', descending: true)
+          .limit(30);
+      await for (final result in query.snapshots()) {
+        final messages = <ChatMessage>[];
+        for (final document in result.docs) {
+          try {
+            messages.add(ChatMessage.fromFirestore(document.data()));
+          } on ArgumentError {
+            throw const ChatFailure('invalidMessage');
+          } on FormatException {
+            throw const ChatFailure('invalidMessage');
+          } on TypeError {
+            throw const ChatFailure('invalidMessage');
+          }
+        }
+        yield messages;
+      }
+    } on FirebaseException catch (e) {
+      throw ChatFailure(
+          e.code == 'unavailable' ? 'networkError' : 'loadFailed');
+    }
+  }
+
   ChatMessage _messageFor(
       String messageId, String conversationId, String senderUid, String text) {
     try {

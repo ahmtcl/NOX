@@ -10,6 +10,8 @@ abstract interface class ChatRepository {
       String conversationId, String senderUid, String text);
   Future<ChatMessagePage> getMessages(String conversationId,
       {required String currentUserUid, Object? cursor, int pageSize = 30});
+  Stream<List<ChatMessage>> watchMessages(
+      String conversationId, String currentUserUid);
 }
 
 class ChatMessagePage {

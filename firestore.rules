@@ -96,6 +96,30 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/interactions/$(request.resource.data.userBUid + '_' + request.resource.data.userAUid)).data.type in ['like','specialInterest'];
       allow update, delete: if false;
     }
+    match /conversations/{conversationId} {
+      allow read: if signedIn()
+        && (resource.data.userAUid == request.auth.uid || resource.data.userBUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userAUid', 'userBUid', 'matchId', 'lastMessagePreview', 'createdAt', 'updatedAt'])
+        && request.resource.data.userAUid is string
+        && request.resource.data.userBUid is string
+        && request.resource.data.userAUid != ''
+        && request.resource.data.userBUid != ''
+        && request.resource.data.userAUid < request.resource.data.userBUid
+        && (request.resource.data.userAUid == request.auth.uid || request.resource.data.userBUid == request.auth.uid)
+        && request.resource.data.matchId == conversationId
+        && conversationId == request.resource.data.userAUid + '_' + request.resource.data.userBUid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && exists(/databases/$(database)/documents/matches/$(conversationId))
+        && get(/databases/$(database)/documents/matches/$(conversationId)).data.status == 'active'
+        && get(/databases/$(database)/documents/matches/$(conversationId)).data.userAUid == request.resource.data.userAUid
+        && get(/databases/$(database)/documents/matches/$(conversationId)).data.userBUid == request.resource.data.userBUid
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.userAUid + '_' + request.resource.data.userBUid))
+        && !exists(/databases/$(database)/documents/blocks/$(request.resource.data.userBUid + '_' + request.resource.data.userAUid))
+        && (!('lastMessagePreview' in request.resource.data) || request.resource.data.lastMessagePreview is string);
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }

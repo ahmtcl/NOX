@@ -85,6 +85,17 @@ class AppLocalizations {
       isTurkish ? 'Google ile devam et' : 'Continue with Google';
   String get continueWithApple =>
       isTurkish ? 'Apple ile devam et' : 'Continue with Apple';
+  String get continueWithPhone => isTurkish
+      ? 'Telefon numarası ile devam et'
+      : 'Continue with phone number';
+  String get registerHeadline =>
+      isTurkish ? 'Hesabını oluştur' : 'Create your account';
+  String get registerSubheadline => isTurkish
+      ? 'Aramıza katılmak çok kolay.'
+      : 'Joining us is easy.';
+  String get phoneRegistrationSoon => isTurkish
+      ? 'Telefon numarası ile kayıt yakında.'
+      : 'Phone number registration is coming soon.';
   String get or => isTurkish ? 'veya' : 'or';
   String get verificationTitle =>
       isTurkish ? 'E-postanı doğrula' : 'Verify your email';

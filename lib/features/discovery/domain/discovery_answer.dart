@@ -38,6 +38,13 @@ class DiscoveryAnswer {
 
   static const maxLength = 300;
 
+  static String idFor(String questionId, String userUid) {
+    if (questionId.trim().isEmpty || userUid.trim().isEmpty) {
+      throw ArgumentError('invalid discovery answer identifiers');
+    }
+    return '${questionId}_${userUid}';
+  }
+
   final String sessionId;
   final String questionId;
   final String userUid;

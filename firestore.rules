@@ -120,6 +120,98 @@ service cloud.firestore {
         && (!('lastMessagePreview' in request.resource.data) || request.resource.data.lastMessagePreview is string);
       allow update, delete: if false;
     }
+    match /discoverySessions/{sessionId} {
+      function isDiscoveryParticipant() {
+        return signedIn()
+          && (resource.data.userAUid == request.auth.uid
+            || resource.data.userBUid == request.auth.uid);
+      }
+      function immutableDiscoveryFields() {
+        return request.resource.data.keys().hasOnly(['userAUid', 'userBUid', 'status', 'questionIds', 'currentQuestionIndex', 'userAWantsReveal', 'userBWantsReveal', 'createdAt', 'updatedAt'])
+          && request.resource.data.userAUid == resource.data.userAUid
+          && request.resource.data.userBUid == resource.data.userBUid
+          && request.resource.data.questionIds == resource.data.questionIds
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.userAWantsReveal == resource.data.userAWantsReveal
+          && request.resource.data.userBWantsReveal == resource.data.userBWantsReveal
+          && request.resource.data.updatedAt == request.time;
+      }
+      function activeQuestionHasBothAnswers() {
+        return exists(/databases/$(database)/documents/discoverySessions/$(sessionId)/answers/$(resource.data.questionIds[resource.data.currentQuestionIndex] + '_' + resource.data.userAUid))
+          && exists(/databases/$(database)/documents/discoverySessions/$(sessionId)/answers/$(resource.data.questionIds[resource.data.currentQuestionIndex] + '_' + resource.data.userBUid));
+      }
+      function validQuestionProgression() {
+        return resource.data.status == 'questions'
+          && activeQuestionHasBothAnswers()
+          && ((resource.data.currentQuestionIndex == 0
+              && request.resource.data.status == 'questions'
+              && request.resource.data.currentQuestionIndex == 1)
+            || (resource.data.currentQuestionIndex == 1
+              && request.resource.data.status == 'questions'
+              && request.resource.data.currentQuestionIndex == 2)
+            || (resource.data.currentQuestionIndex == 2
+              && request.resource.data.status == 'hiddenChat'
+              && request.resource.data.currentQuestionIndex == 2));
+      }
+      allow read: if signedIn()
+        && (resource.data.userAUid == request.auth.uid || resource.data.userBUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userAUid', 'userBUid', 'status', 'questionIds', 'currentQuestionIndex', 'userAWantsReveal', 'userBWantsReveal', 'createdAt', 'updatedAt'])
+        && request.resource.data.userAUid is string
+        && request.resource.data.userBUid is string
+        && request.resource.data.userAUid != ''
+        && request.resource.data.userBUid != ''
+        && request.resource.data.userAUid != request.resource.data.userBUid
+        && request.resource.data.userAUid < request.resource.data.userBUid
+        && (request.resource.data.userAUid == request.auth.uid || request.resource.data.userBUid == request.auth.uid)
+        && sessionId == request.resource.data.userAUid + '_' + request.resource.data.userBUid
+        && request.resource.data.status == 'questions'
+        && request.resource.data.currentQuestionIndex == 0
+        && request.resource.data.userAWantsReveal == false
+        && request.resource.data.userBWantsReveal == false
+        && request.resource.data.questionIds is list
+        && request.resource.data.questionIds.size() == 3
+        && request.resource.data.questionIds[0] is string
+        && request.resource.data.questionIds[1] is string
+        && request.resource.data.questionIds[2] is string
+        && request.resource.data.questionIds[0] != ''
+        && request.resource.data.questionIds[1] != ''
+        && request.resource.data.questionIds[2] != ''
+        && request.resource.data.questionIds[0] != request.resource.data.questionIds[1]
+        && request.resource.data.questionIds[0] != request.resource.data.questionIds[2]
+        && request.resource.data.questionIds[1] != request.resource.data.questionIds[2]
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isDiscoveryParticipant()
+        && immutableDiscoveryFields()
+        && validQuestionProgression();
+      allow delete: if false;
+    }
+    match /discoverySessions/{sessionId}/answers/{answerId} {
+      function session() {
+        return get(/databases/$(database)/documents/discoverySessions/$(sessionId)).data;
+      }
+      function isParticipant() {
+        return signedIn()
+          && (session().userAUid == request.auth.uid || session().userBUid == request.auth.uid);
+      }
+      allow read: if isParticipant()
+        && (resource.data.userUid == request.auth.uid
+          || exists(/databases/$(database)/documents/discoverySessions/$(sessionId)/answers/$(resource.data.questionId + '_' + request.auth.uid)));
+      allow create: if isParticipant()
+        && request.resource.data.keys().hasOnly(['sessionId', 'questionId', 'userUid', 'text', 'createdAt'])
+        && request.resource.data.sessionId == sessionId
+        && request.resource.data.questionId is string
+        && request.resource.data.questionId == session().questionIds[session().currentQuestionIndex]
+        && request.resource.data.userUid == request.auth.uid
+        && answerId == request.resource.data.questionId + '_' + request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 300
+        && request.resource.data.createdAt == request.time
+        && session().status == 'questions';
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
